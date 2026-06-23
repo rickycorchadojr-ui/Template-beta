@@ -1,1161 +1,1130 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Kaizen Trade Autopsy</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Kaizen Trade Autopsy — Session Log & Analytics Dashboard</title>
+<script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/prop-types/15.8.1/prop-types.min.js"></script>
+<script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/recharts/2.12.7/Recharts.js"></script>
+<style>
+/* ── Reset ── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{background:#0a0a0a;color:#e4e4e7;font-family:'JetBrains Mono','Courier New',monospace;min-height:100vh;}
+button{font-family:inherit;cursor:pointer;}
+input,textarea,select{font-family:inherit;}
 
-  <!-- React + ReactDOM + Babel -->
-  <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-  <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-  <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
-  <!-- Recharts via UMD -->
-  <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/recharts/2.12.7/Recharts.min.js"></script>
+/* ── Utilities ── */
+.flex{display:flex;}.flex-wrap{display:flex;flex-wrap:wrap;}
+.grid{display:grid;}.items-center{align-items:center;}
+.justify-between{justify-content:space-between;}
+.text-center{text-align:center;}.text-right{text-align:right;}
+.gap-1{gap:4px;}.gap-2{gap:8px;}.gap-3{gap:12px;}.gap-4{gap:16px;}.gap-6{gap:24px;}
+.mb-1{margin-bottom:4px;}.mb-2{margin-bottom:8px;}.mb-3{margin-bottom:12px;}
+.mb-4{margin-bottom:16px;}.mb-5{margin-bottom:20px;}.mb-6{margin-bottom:24px;}
+.mt-1{margin-top:4px;}.mt-2{margin-top:8px;}
+.p-3{padding:12px;}.p-5{padding:20px;}
+.px-3{padding-left:12px;padding-right:12px;}.px-4{padding-left:16px;padding-right:16px;}
+.py-1{padding-top:4px;padding-bottom:4px;}.py-2{padding-top:8px;padding-bottom:8px;}.py-4{padding-top:16px;padding-bottom:16px;}
+.space-y-2>*+*{margin-top:8px;}
+.grid-cols-2{grid-template-columns:repeat(2,1fr);}
+.grid-cols-3{grid-template-columns:repeat(3,1fr);}
+.grid-cols-4{grid-template-columns:repeat(4,1fr);}
+.rounded{border-radius:4px;}.rounded-lg{border-radius:8px;}
+.border{border-width:1px;border-style:solid;}
+.border-zinc-700{border-color:#3f3f46;}.border-zinc-800{border-color:#27272a;}
+.bg-zinc-900{background:#18181b;}.bg-zinc-950{background:#09090b;}
+.text-xs{font-size:11px;}.text-sm{font-size:13px;}.text-lg{font-size:18px;}
+.text-xl{font-size:20px;}.text-2xl{font-size:24px;}
+.font-mono{font-family:'JetBrains Mono','Courier New',monospace;}
+.font-bold{font-weight:700;}.italic{font-style:italic;}
+.uppercase{text-transform:uppercase;}.tracking-widest{letter-spacing:0.2em;}
+.leading-relaxed{line-height:1.8;}.resize-none{resize:none;}
+.text-white{color:#ffffff;}.text-zinc-100{color:#f4f4f5;}.text-zinc-300{color:#d4d4d8;}
+.text-zinc-400{color:#a1a1aa;}.text-zinc-500{color:#71717a;}.text-zinc-600{color:#52525b;}
+.text-zinc-700{color:#3f3f46;}
+.text-emerald-400{color:#34d399;}.text-emerald-100{color:#d1fae5;}
+.text-red-400{color:#f87171;}.text-red-100{color:#fee2e2;}
+.text-blue-400{color:#60a5fa;}.text-blue-100{color:#dbeafe;}
+.text-yellow-400{color:#fbbf24;}.text-yellow-100{color:#fef3c7;}
+.text-purple-100{color:#f3e8ff;}
+input::placeholder,textarea::placeholder{color:#3f3f46;}
 
-  <style>
-    /* ── Reset ── */
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      background: #0a0a0a;
-      color: #e4e4e7;
-      font-family: 'JetBrains Mono', 'Courier New', monospace;
-      min-height: 100vh;
-    }
-    button { font-family: inherit; cursor: pointer; }
-    input, textarea, select { font-family: inherit; }
+/* ── Chips ── */
+.chip-base{display:inline-block;padding:4px 12px;font-size:11px;border:1px solid #3f3f46;border-radius:4px;background:#18181b;color:#a1a1aa;cursor:pointer;transition:all 0.15s;}
+.chip-active-blue{background:#1e1b4b!important;border-color:#6366f1!important;color:#c7d2fe!important;}
+.chip-active-red{background:#450a0a!important;border-color:#ef4444!important;color:#fca5a5!important;}
+.chip-active-green{background:#064e3b!important;border-color:#10b981!important;color:#6ee7b7!important;}
+.chip-active-yellow{background:#422006!important;border-color:#f59e0b!important;color:#fde68a!important;}
+.chip-active-purple{background:#3b0764!important;border-color:#a855f7!important;color:#e9d5ff!important;}
+.grade-active-A{background:#064e3b!important;border-color:#34d399!important;color:#d1fae5!important;}
+.grade-active-B{background:#1e3a5f!important;border-color:#60a5fa!important;color:#dbeafe!important;}
+.grade-active-C{background:#422006!important;border-color:#fbbf24!important;color:#fef3c7!important;}
+.grade-active-F{background:#450a0a!important;border-color:#f87171!important;color:#fee2e2!important;}
 
-    /* ── Flex/Grid Utilities ── */
-    .flex { display: flex; }
-    .flex-wrap { display: flex; flex-wrap: wrap; }
-    .grid { display: grid; }
-    .items-center { align-items: center; }
-    .justify-between { justify-content: space-between; }
-    .text-center { text-align: center; }
-    .text-right { text-align: right; }
-    .gap-1 { gap: 4px; } .gap-2 { gap: 8px; } .gap-3 { gap: 12px; } .gap-4 { gap: 16px; } .gap-6 { gap: 24px; }
-    .mb-1{margin-bottom:4px;}.mb-2{margin-bottom:8px;}.mb-3{margin-bottom:12px;}.mb-4{margin-bottom:16px;}.mb-5{margin-bottom:20px;}.mb-6{margin-bottom:24px;}
-    .mt-1{margin-top:4px;}.mt-2{margin-top:8px;}
-    .p-3{padding:12px;}.p-5{padding:20px;}.px-3{padding-left:12px;padding-right:12px;}.px-4{padding-left:16px;padding-right:16px;}
-    .py-1{padding-top:4px;padding-bottom:4px;}.py-2{padding-top:8px;padding-bottom:8px;}.py-4{padding-top:16px;padding-bottom:16px;}
-    .space-y-2 > * + * { margin-top: 8px; }
-    .grid-cols-2{grid-template-columns:repeat(2,1fr);}.grid-cols-3{grid-template-columns:repeat(3,1fr);}.grid-cols-4{grid-template-columns:repeat(4,1fr);}
-    .rounded{border-radius:4px;}.rounded-lg{border-radius:8px;}
-    .border{border-width:1px;border-style:solid;}.border-zinc-700{border-color:#3f3f46;}.border-zinc-800{border-color:#27272a;}
-    .bg-zinc-900{background:#18181b;}.bg-zinc-950{background:#09090b;}
-    .text-xs{font-size:11px;}.text-sm{font-size:13px;}.text-xl{font-size:20px;}.text-2xl{font-size:24px;}.text-lg{font-size:18px;}
-    .font-mono{font-family:'JetBrains Mono','Courier New',monospace;}.font-bold{font-weight:700;}.italic{font-style:italic;}
-    .uppercase{text-transform:uppercase;}.tracking-widest{letter-spacing:0.2em;}.leading-relaxed{line-height:1.8;}.resize-none{resize:none;}
-    .text-white{color:#ffffff;}.text-zinc-100{color:#f4f4f5;}.text-zinc-300{color:#d4d4d8;}.text-zinc-400{color:#a1a1aa;}
-    .text-zinc-500{color:#71717a;}.text-zinc-600{color:#52525b;}.text-zinc-700{color:#3f3f46;}
-    .text-emerald-400{color:#34d399;}.text-emerald-100{color:#d1fae5;}
-    .text-red-400{color:#f87171;}.text-red-100{color:#fee2e2;}
-    .text-blue-400{color:#60a5fa;}.text-blue-100{color:#dbeafe;}
-    .text-yellow-400{color:#fbbf24;}.text-yellow-100{color:#fef3c7;}
-    .text-purple-100{color:#f3e8ff;}
-    input::placeholder, textarea::placeholder { color: #3f3f46; }
+/* ── Field inputs ── */
+.field-input{background:#18181b;border:1px solid #3f3f46;color:#f4f4f5;border-radius:4px;padding:8px 12px;font-size:13px;width:100%;font-family:inherit;}
+.field-input:focus{outline:none;border-color:#a1a1aa;}
+.field-input.small{font-size:11px;padding:4px 8px;}
+textarea.field-input{resize:none;}
 
-    /* ── Chips & Grades ── */
-    .chip-base {
-      display: inline-block; padding: 4px 12px; font-size: 11px;
-      border: 1px solid #3f3f46; border-radius: 4px;
-      background: #18181b; color: #a1a1aa; cursor: pointer; transition: all 0.15s;
-    }
-    .chip-active-blue{background:#1e1b4b!important;border-color:#6366f1!important;color:#c7d2fe!important;}
-    .chip-active-red{background:#450a0a!important;border-color:#ef4444!important;color:#fca5a5!important;}
-    .chip-active-green{background:#064e3b!important;border-color:#10b981!important;color:#6ee7b7!important;}
-    .chip-active-yellow{background:#422006!important;border-color:#f59e0b!important;color:#fde68a!important;}
-    .chip-active-purple{background:#3b0764!important;border-color:#a855f7!important;color:#e9d5ff!important;}
-    .grade-active-A{background:#064e3b!important;border-color:#34d399!important;color:#d1fae5!important;}
-    .grade-active-B{background:#1e3a5f!important;border-color:#60a5fa!important;color:#dbeafe!important;}
-    .grade-active-C{background:#422006!important;border-color:#fbbf24!important;color:#fef3c7!important;}
-    .grade-active-F{background:#450a0a!important;border-color:#f87171!important;color:#fee2e2!important;}
+/* ── PRIMARY COLOR READABILITY OVERRIDE v3 ── */
+:root{
+  --kk-red:#ff2b2b;--kk-blue:#2563ff;--kk-yellow:#ffd400;
+  --kk-green:#22c55e;--kk-white:#ffffff;--kk-black:#050505;--kk-paper:#f4f4ef;
+}
+body,#root>div{
+  background:linear-gradient(90deg,rgba(37,99,255,.16),transparent 18%,transparent 82%,rgba(255,212,0,.20)),var(--kk-paper)!important;
+  color:#050505!important;line-height:1.5;
+}
+#root>div>div:first-child{
+  background:#050505!important;border-bottom:6px solid var(--kk-yellow)!important;
+  position:sticky;top:0;z-index:20;
+}
+#root>div>div:first-child div div:first-child{color:var(--kk-yellow)!important;font-weight:900!important;}
+#root>div>div:first-child div div:nth-child(2){color:#fff!important;font-size:24px!important;font-weight:900!important;text-shadow:2px 2px 0 var(--kk-blue);}
+#root>div>div:nth-child(2){max-width:980px!important;}
+.bg-zinc-950,.bg-zinc-900,#root>div>div:nth-child(2)>div[style*="background"]{background:#ffffff!important;color:#050505!important;}
+.border-zinc-700,.border-zinc-800,#root>div>div:nth-child(2)>div[style*="border"]{border:3px solid #050505!important;border-top:8px solid var(--kk-blue)!important;border-radius:14px!important;box-shadow:6px 6px 0 #050505!important;}
+.text-zinc-500,.text-zinc-400,div[style*="color:#71717a"],div[style*="color: #71717a"]{color:#050505!important;font-weight:900!important;opacity:1!important;}
+.text-zinc-600,div[style*="color:#52525b"],div[style*="color: #52525b"]{color:#333!important;opacity:1!important;}
+.text-zinc-700{color:#555!important;}
+.field-input{background:#fff!important;color:#050505!important;border:3px solid #050505!important;border-radius:8px!important;box-shadow:4px 4px 0 #050505!important;font-size:15px!important;min-height:44px;}
+textarea.field-input{min-height:76px;}
+.field-input::placeholder{color:#777!important;}
+.chip-base,button{border:3px solid #050505!important;border-radius:8px!important;font-weight:900!important;box-shadow:3px 3px 0 #050505!important;}
+.chip-base{background:#fff!important;color:#050505!important;padding:7px 12px!important;font-size:12px!important;}
+.chip-active-blue,.grade-active-B{background:var(--kk-blue)!important;color:#fff!important;}
+.chip-active-green,.grade-active-A{background:var(--kk-green)!important;color:#050505!important;}
+.chip-active-red,.grade-active-F{background:var(--kk-red)!important;color:#fff!important;}
+.chip-active-yellow,.grade-active-C{background:var(--kk-yellow)!important;color:#050505!important;}
+#root>div>div:first-child button{background:var(--kk-yellow)!important;color:#050505!important;}
+#print-btn{background:var(--kk-blue)!important;color:#fff!important;}
+#root>div>div:nth-child(2)>div:first-child{
+  background:#fff!important;color:#050505!important;
+  border:3px solid #050505!important;border-left:14px solid var(--kk-red)!important;
+  border-radius:14px!important;padding:18px 22px!important;
+  box-shadow:7px 7px 0 var(--kk-blue)!important;
+}
+#root>div>div:nth-child(2)>div:first-child div{color:#050505!important;font-size:16px!important;font-weight:900!important;}
+.text-white{color:#050505!important;}
+.text-xl{font-size:26px!important;font-weight:900!important;}
+.text-2xl{font-size:30px!important;font-weight:900!important;}
+.text-emerald-400{color:#047a2f!important;}
+.text-red-400{color:#d00000!important;}
+.text-blue-400{color:#004dff!important;}
+.text-yellow-400{color:#b88700!important;}
+button[style*="dashed"]{background:var(--kk-yellow)!important;color:#050505!important;border:3px dashed #050505!important;border-radius:12px!important;font-size:14px!important;font-weight:900!important;box-shadow:5px 5px 0 #050505!important;}
+button[style*="background: none"][style*="border: none"]{background:var(--kk-red)!important;color:#fff!important;border:3px solid #050505!important;border-radius:8px!important;padding:7px 10px!important;}
+#root>div>div:nth-child(2)>div:last-child{color:#050505!important;font-size:12px!important;font-weight:900;}
 
-    /* ── Field Input ── */
-    .field-input {
-      background: #18181b; border: 1px solid #3f3f46; color: #f4f4f5;
-      border-radius: 4px; padding: 8px 12px; font-size: 13px; width: 100%; font-family: inherit;
-    }
-    .field-input:focus { outline: none; border-color: #a1a1aa; }
-    .field-input.small { font-size: 11px; padding: 4px 8px; }
-    textarea.field-input { resize: none; }
+/* ── Dashboard card overrides (keep dark for readability inside dash) ── */
+.dash-card{background:#141417!important;border:1px solid #3f3f46!important;border-top:1px solid #3f3f46!important;border-radius:8px!important;box-shadow:none!important;color:#e4e4e7!important;}
+.dash-tab-bar{background:#08080a!important;border-bottom:1px solid #27272a!important;border-top:none!important;box-shadow:none!important;border-radius:0!important;}
+.dash-tab-bar button{background:none!important;border:none!important;box-shadow:none!important;border-radius:0!important;font-weight:400!important;}
+.dash-inner{color:#e4e4e7!important;}
+.tbl-wrap{overflow-x:auto;width:100%;}
 
-    /* ══════════════════════════════════════════
-       PRIMARY COLOR READABILITY OVERRIDE — v3
-    ══════════════════════════════════════════ */
-    :root {
-      --kk-red:#ff2b2b; --kk-blue:#2563ff; --kk-yellow:#ffd400;
-      --kk-green:#22c55e; --kk-white:#ffffff; --kk-black:#050505; --kk-paper:#f4f4ef;
-    }
+/* ── Mobile ── */
+@media(max-width:760px){
+  .grid-cols-4,.grid-cols-3,.grid-cols-2{grid-template-columns:1fr!important;}
+  #root>div>div:first-child{flex-direction:column!important;align-items:flex-start!important;}
+  #root>div>div:first-child>div:last-child{flex-wrap:wrap!important;}
+}
 
-    /* PAGE */
-    body, #root > div {
-      background: linear-gradient(90deg,rgba(37,99,255,.16),transparent 18%,transparent 82%,rgba(255,212,0,.20)), var(--kk-paper) !important;
-      color: #050505 !important; line-height: 1.5;
-    }
-
-    /* HEADER */
-    #root > div > div:first-child {
-      background: #050505 !important; border-bottom: 6px solid var(--kk-yellow) !important;
-      position: sticky; top: 0; z-index: 20;
-    }
-    #root > div > div:first-child div div:first-child { color: var(--kk-yellow) !important; font-weight: 900 !important; }
-    #root > div > div:first-child div div:nth-child(2) { color: #fff !important; font-size: 24px !important; font-weight: 900 !important; text-shadow: 2px 2px 0 var(--kk-blue); }
-
-    /* MAIN */
-    #root > div > div:nth-child(2) { max-width: 980px !important; }
-
-    /* CARDS */
-    .bg-zinc-950, .bg-zinc-900,
-    #root > div > div:nth-child(2) > div[style*="background"] {
-      background: #ffffff !important; color: #050505 !important;
-    }
-    .border-zinc-700, .border-zinc-800,
-    #root > div > div:nth-child(2) > div[style*="border"] {
-      border: 3px solid #050505 !important; border-top: 8px solid var(--kk-blue) !important;
-      border-radius: 14px !important; box-shadow: 6px 6px 0 #050505 !important;
-    }
-
-    /* LABELS */
-    .text-zinc-500, .text-zinc-400, div[style*="color:#71717a"], div[style*="color: #71717a"] {
-      color: #050505 !important; font-weight: 900 !important; opacity: 1 !important;
-    }
-    .text-zinc-600, div[style*="color:#52525b"], div[style*="color: #52525b"] { color: #333 !important; opacity: 1 !important; }
-    .text-zinc-700 { color: #555 !important; }
-
-    /* INPUTS */
-    .field-input {
-      background: #fff !important; color: #050505 !important;
-      border: 3px solid #050505 !important; border-radius: 8px !important;
-      box-shadow: 4px 4px 0 #050505 !important; font-size: 15px !important; min-height: 44px;
-    }
-    textarea.field-input { min-height: 76px; }
-    .field-input::placeholder { color: #777 !important; }
-
-    /* BUTTONS */
-    .chip-base, button {
-      border: 3px solid #050505 !important; border-radius: 8px !important;
-      font-weight: 900 !important; box-shadow: 3px 3px 0 #050505 !important;
-    }
-    .chip-base { background: #fff !important; color: #050505 !important; padding: 7px 12px !important; font-size: 12px !important; }
-
-    /* ACTIVE CHIPS */
-    .chip-active-blue, .grade-active-B { background: var(--kk-blue) !important; color: #fff !important; }
-    .chip-active-green, .grade-active-A { background: var(--kk-green) !important; color: #050505 !important; }
-    .chip-active-red, .grade-active-F { background: var(--kk-red) !important; color: #fff !important; }
-    .chip-active-yellow, .grade-active-C { background: var(--kk-yellow) !important; color: #050505 !important; }
-
-    /* HEADER BUTTONS */
-    #root > div > div:first-child button { background: var(--kk-yellow) !important; color: #050505 !important; }
-    #print-btn { background: var(--kk-blue) !important; color: #fff !important; }
-
-    /* MANTRA */
-    #root > div > div:nth-child(2) > div:first-child {
-      background: #fff !important; color: #050505 !important;
-      border: 3px solid #050505 !important; border-left: 14px solid var(--kk-red) !important;
-      border-radius: 14px !important; padding: 18px 22px !important;
-      box-shadow: 7px 7px 0 var(--kk-blue) !important;
-    }
-    #root > div > div:nth-child(2) > div:first-child div { color: #050505 !important; font-size: 16px !important; font-weight: 900 !important; }
-
-    /* COLORS */
-    .text-white { color: #050505 !important; }
-    .text-xl { font-size: 26px !important; font-weight: 900 !important; }
-    .text-2xl { font-size: 30px !important; font-weight: 900 !important; }
-    .text-emerald-400 { color: #047a2f !important; }
-    .text-red-400 { color: #d00000 !important; }
-    .text-blue-400 { color: #004dff !important; }
-    .text-yellow-400 { color: #b88700 !important; }
-
-    /* ADD TRADE */
-    button[style*="dashed"] {
-      background: var(--kk-yellow) !important; color: #050505 !important;
-      border: 3px dashed #050505 !important; border-radius: 12px !important;
-      font-size: 14px !important; font-weight: 900 !important; box-shadow: 5px 5px 0 #050505 !important;
-    }
-    /* REMOVE */
-    button[style*="background: none"][style*="border: none"],
-    button[style*="background:none"][style*="border:none"] {
-      background: var(--kk-red) !important; color: #fff !important;
-      border: 3px solid #050505 !important; border-radius: 8px !important; padding: 7px 10px !important;
-    }
-
-    /* FOOTER */
-    #root > div > div:nth-child(2) > div:last-child { color: #050505 !important; font-size: 12px !important; font-weight: 900; }
-
-    /* DASHBOARD overrides — keep dark theme inside dashboard */
-    #dashboard-root { all: revert; }
-    #dashboard-root * { box-sizing: border-box; }
-
-    /* MOBILE */
-    @media(max-width:760px){
-      .grid-cols-4,.grid-cols-3,.grid-cols-2{grid-template-columns:1fr!important;}
-      #root > div > div:first-child{flex-direction:column!important;align-items:flex-start!important;}
-      #root > div > div:first-child > div:last-child{flex-wrap:wrap!important;}
-    }
-
-    /* PRINT */
-    @media print{
-      @page{margin:0.45in;}
-      body,#root>div{background:var(--kk-paper)!important;color:#050505!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
-      #root>div>div:first-child{position:static!important;background:#050505!important;border-bottom:6px solid var(--kk-yellow)!important;}
-      #print-btn,#root>div>div:first-child button{display:none!important;}
-      .bg-zinc-950,.bg-zinc-900{background:#fff!important;color:#050505!important;}
-      .border-zinc-700,.border-zinc-800{border:2px solid #050505!important;border-top:6px solid var(--kk-blue)!important;box-shadow:4px 4px 0 #050505!important;break-inside:avoid!important;page-break-inside:avoid!important;}
-      .field-input{background:#fff!important;color:#050505!important;border:2px solid #050505!important;box-shadow:2px 2px 0 #050505!important;}
-      .chip-base,button{box-shadow:2px 2px 0 #050505!important;}
-      #dashboard-section{display:none!important;}
-    }
-  </style>
+/* ── Print ── */
+@media print{
+  @page{margin:0.45in;}
+  body,#root>div{background:var(--kk-paper)!important;color:#050505!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
+  #root>div>div:first-child{position:static!important;background:#050505!important;border-bottom:6px solid var(--kk-yellow)!important;}
+  #print-btn,#root>div>div:first-child button{display:none!important;}
+  .bg-zinc-950,.bg-zinc-900,#root>div>div:nth-child(2)>div[style*="background"]{background:#fff!important;color:#050505!important;}
+  .border-zinc-700,.border-zinc-800,#root>div>div:nth-child(2)>div[style*="border"]{border:2px solid #050505!important;border-top:6px solid var(--kk-blue)!important;box-shadow:4px 4px 0 #050505!important;break-inside:avoid!important;page-break-inside:avoid!important;}
+  .field-input{background:#fff!important;color:#050505!important;border:2px solid #050505!important;box-shadow:2px 2px 0 #050505!important;}
+  .chip-base,button{box-shadow:2px 2px 0 #050505!important;}
+}
+</style>
 </head>
 <body>
-  <div id="root"></div>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect } = React;
+const { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, Cell } = Recharts;
 
-  <script type="text/babel">
-    const { useState, useEffect, useRef } = React;
-
-    // ═══════════════════════════════════════════════════════════════
-    // STORAGE HELPERS
-    // ═══════════════════════════════════════════════════════════════
-    const SESSIONS_KEY = "kaizen:sessions";
-
-    async function loadSessions() {
-      try {
-        const r = await window.storage.get(SESSIONS_KEY);
-        return r ? JSON.parse(r.value) : [];
-      } catch { return []; }
+/* ─── Storage (localStorage for standalone/GitHub) ─── */
+const SESSIONS_KEY = "kaizen:sessions_v2";
+async function loadSavedSessions() {
+  try {
+    if (window.storage && typeof window.storage.get === 'function') {
+      const r = await window.storage.get(SESSIONS_KEY);
+      return r ? JSON.parse(r.value) : [];
     }
-
-    async function saveSessions(sessions) {
-      try {
-        await window.storage.set(SESSIONS_KEY, JSON.stringify(sessions));
-        return true;
-      } catch { return false; }
+    const local = localStorage.getItem(SESSIONS_KEY);
+    return local ? JSON.parse(local) : [];
+  } catch { return []; }
+}
+async function saveAllSessions(list) {
+  try {
+    if (window.storage && typeof window.storage.set === 'function') {
+      await window.storage.set(SESSIONS_KEY, JSON.stringify(list));
+    } else {
+      localStorage.setItem(SESSIONS_KEY, JSON.stringify(list));
     }
+  } catch(e) { console.error("Storage save failed", e); }
+}
 
-    // ═══════════════════════════════════════════════════════════════
-    // CONSTANTS
-    // ═══════════════════════════════════════════════════════════════
-    const ENV_OPTIONS   = ["ROTATIONAL","TRENDING","CHOP","EXPANSION","UNKNOWN"];
-    const GRADE_OPTIONS = ["A","B","C","F"];
-    const SETUP_TAGS    = ["BREAKOUT","PULLBACK","REVERSAL","CONTINUATION","OPENING RANGE","FAILED AUCTION","ANTICIPATION","FOMO","CHASE","OTHER"];
-    const LOSS_TAGS     = ["EARLY","CHOP","REVERSAL","CHASE","OVERSIZED","FOMO","LOW VOLUME","COUNTERTREND","OPENING RANGE NOISE","EXPANSION"];
+/* ─── Constants ─── */
+const mono = { fontFamily:"'JetBrains Mono','Courier New',monospace" };
+const C = {
+  bg:"#08080a", surface:"#0f0f12", card:"#141417",
+  border:"#27272a", border2:"#3f3f46",
+  text:"#e4e4e7", muted:"#71717a", faint:"#3f3f46",
+  green:"#10b981", greenBg:"#064e3b", greenText:"#6ee7b7",
+  red:"#ef4444", redBg:"#450a0a", redText:"#fca5a5",
+  blue:"#6366f1", blueBg:"#1e1b4b", blueText:"#a5b4fc",
+  yellow:"#eab308", yellowBg:"#422006", yellowText:"#fde047",
+  purple:"#a855f7",
+};
+const ENV_OPTIONS = ["ROTATIONAL","TRENDING","CHOP","EXPANSION","UNKNOWN"];
+const GRADE_OPTIONS = ["A","B","C","F"];
+const SETUP_TAGS = ["BREAKOUT","PULLBACK","REVERSAL","CONTINUATION","OPENING RANGE","FAILED AUCTION","ANTICIPATION","FOMO","CHASE","OTHER"];
+const LOSS_TAGS = ["EARLY","CHOP","REVERSAL","CHASE","OVERSIZED","FOMO","LOW VOLUME","COUNTERTREND","OPENING RANGE NOISE","EXPANSION"];
 
-    const emptyTrade = () => ({
-      id: Date.now() + Math.random(),
-      direction:"", time:"", entry:"", exit:"", result:"",
-      grade:"", immediateFollowThrough:null, negotiable:null,
-      mae:"", mfe:"", contracts:"", why:"", wouldTakeAgain:null,
-      marketDid:null, lossTag:"", setupTag:"",
-      doNothingOutcome:"", notes:"",
-    });
+const emptyTrade = () => ({
+  id: Date.now() + Math.random(),
+  direction:"", time:"", entry:"", exit:"", result:"",
+  contracts:"",
+  grade:"", immediateFollowThrough:null, negotiable:null,
+  mae:"", mfe:"", why:"", wouldTakeAgain:null,
+  marketDid:null, lossTag:"", setupTag:"",
+  doNothingOutcome:"", notes:"",
+});
+const emptySession = () => ({
+  id: Date.now(),
+  date: new Date().toISOString().slice(0,10),
+  environment:"", environmentCorrect:null, firstTradeSetup:null,
+  cheatScore:"", patienceScore:"", walkAways:"", reentryCount:"",
+  sessionNotes:"", trades:[emptyTrade()],
+});
 
-    const emptySession = () => ({
-      id: Date.now() + Math.random(),
-      date: new Date().toISOString().slice(0,10),
-      environment:"", environmentCorrect:null, firstTradeSetup:null,
-      cheatScore:"", patienceScore:"", walkAways:"", reentryCount:"",
-      sessionNotes:"", trades:[emptyTrade()], avoided:[],
-    });
+/* ─── Shared UI atoms ─── */
+function Chip({label,active,onClick,color="blue"}){
+  return <button onClick={onClick} className={`chip-base${active?` chip-active-${color}`:""}`}>{label}</button>;
+}
+function YesNo({value,onChange,yesLabel="YES",noLabel="NO"}){
+  return(
+    <div className="flex gap-2">
+      <Chip label={yesLabel} active={value===true}  onClick={()=>onChange(value===true?null:true)}  color="green"/>
+      <Chip label={noLabel}  active={value===false} onClick={()=>onChange(value===false?null:false)} color="red"/>
+    </div>
+  );
+}
+function Field({label,hint,children}){
+  return(
+    <div className="mb-4">
+      <div className="text-xs font-mono text-zinc-400 uppercase tracking-widest mb-1">{label}</div>
+      {hint&&<div className="text-xs text-zinc-600 mb-2 italic">{hint}</div>}
+      {children}
+    </div>
+  );
+}
+function Input({value,onChange,placeholder,type="text",small}){
+  return <input type={type} value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder} className={`field-input${small?" small":""}`}/>;
+}
+function TextArea({value,onChange,placeholder,rows=2}){
+  return <textarea value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder} rows={rows} className="field-input"/>;
+}
+function GradeButton({grade,active,onClick}){
+  const desc={A:"Take again tomorrow",B:"Good, minor flaw",C:"Questionable",F:"Never should happen"};
+  return <button onClick={onClick} title={desc[grade]} className={`chip-base px-4 py-2 text-sm${active?` grade-active-${grade}`:""}`} style={{padding:"8px 16px",fontSize:"13px"}}>{grade}</button>;
+}
 
-    // ═══════════════════════════════════════════════════════════════
-    // SHARED SMALL COMPONENTS
-    // ═══════════════════════════════════════════════════════════════
-    function Chip({ label, active, onClick, color="blue" }) {
-      return <button onClick={onClick} className={`chip-base ${active?`chip-active-${color}`:""}`}>{label}</button>;
-    }
-
-    function YesNo({ value, onChange, yesLabel="YES", noLabel="NO" }) {
-      return (
-        <div className="flex gap-2">
-          <Chip label={yesLabel} active={value===true}  onClick={()=>onChange(value===true?null:true)}  color="green"/>
-          <Chip label={noLabel}  active={value===false} onClick={()=>onChange(value===false?null:false)} color="red"/>
+/* ─── Dashboard UI atoms ─── */
+function Stat({label,value,sub,color}){
+  return(
+    <div className="dash-card" style={{padding:"14px 16px"}}>
+      <div style={{...mono,color:C.muted,fontSize:9,letterSpacing:"0.15em",marginBottom:6,textTransform:"uppercase"}}>{label}</div>
+      <div style={{...mono,color:color||C.text,fontSize:22,fontWeight:700}}>{value}</div>
+      {sub&&<div style={{...mono,color:C.faint,fontSize:10,marginTop:4}}>{sub}</div>}
+    </div>
+  );
+}
+function SectionHead({children,mt=24}){
+  return <div style={{...mono,color:C.muted,fontSize:9,letterSpacing:"0.2em",marginBottom:12,marginTop:mt,textTransform:"uppercase"}}>{children}</div>;
+}
+function Bar2({label,val,max,color}){
+  const pct=max>0?Math.min(100,(val/max)*100):0;
+  return(
+    <div style={{marginBottom:8}}>
+      <div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}>
+        <span style={{...mono,color:C.muted,fontSize:10}}>{label}</span>
+        <span style={{...mono,color:C.text,fontSize:10,fontWeight:700}}>{val}</span>
+      </div>
+      <div style={{background:C.surface,borderRadius:2,height:4,width:"100%"}}>
+        <div style={{background:color||C.blue,borderRadius:2,height:4,width:`${pct}%`,transition:"width .4s"}}/>
+      </div>
+    </div>
+  );
+}
+const ChartTT=({active,payload,label})=>{
+  if(!active||!payload?.length)return null;
+  return(
+    <div style={{...mono,background:C.card,border:`1px solid ${C.border2}`,borderRadius:6,padding:"8px 12px",fontSize:11}}>
+      <div style={{color:C.muted,marginBottom:4}}>{label}</div>
+      {payload.map((p,i)=>(
+        <div key={i} style={{color:typeof p.value==="number"&&p.value<0?C.red:C.green}}>
+          {p.name}: {typeof p.value==="number"&&p.value>=0?"+":""}{typeof p.value==="number"?p.value.toFixed(0):p.value}
         </div>
-      );
-    }
+      ))}
+    </div>
+  );
+};
 
-    function Field({ label, hint, children }) {
-      return (
-        <div className="mb-4">
-          <div className="text-xs font-mono text-zinc-400 uppercase tracking-widest mb-1">{label}</div>
-          {hint && <div className="text-xs text-zinc-600 mb-2 italic">{hint}</div>}
-          {children}
+/* ─── TradeCard ─── */
+function TradeCard({trade,index,onChange,onRemove}){
+  const update=(key,val)=>onChange({...trade,[key]:val});
+  const resultNum=parseFloat(trade.result);
+  const resultColor=isNaN(resultNum)?"text-zinc-400":resultNum>=0?"text-emerald-400":"text-red-400";
+  return(
+    <div className="border border-zinc-700 rounded-lg p-5 mb-4 bg-zinc-950">
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"16px"}}>
+        <div className="flex items-center gap-3">
+          <span className="text-zinc-500 font-mono text-sm">TRADE</span>
+          <span className="text-white font-mono text-xl font-bold">#{index+1}</span>
+          {trade.result!==""&&<span className={`font-mono text-lg font-bold ${resultColor}`}>{resultNum>=0?"+":""}{trade.result}</span>}
         </div>
-      );
-    }
+        <button onClick={onRemove} style={{background:"none",border:"none",color:"#3f3f46",fontSize:"11px",cursor:"pointer"}}
+          onMouseOver={e=>e.target.style.color="#a1a1aa"} onMouseOut={e=>e.target.style.color="#3f3f46"}>REMOVE</button>
+      </div>
 
-    function Input({ value, onChange, placeholder, type="text", small }) {
-      return <input type={type} value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder} className={`field-input${small?" small":""}`}/>;
-    }
-
-    function TextArea({ value, onChange, placeholder, rows=2 }) {
-      return <textarea value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder} rows={rows} className="field-input"/>;
-    }
-
-    function GradeButton({ grade, active, onClick }) {
-      const desc={A:"Take again tomorrow",B:"Good, minor flaw",C:"Questionable",F:"Never should happen"};
-      return (
-        <button onClick={onClick} title={desc[grade]} className={`chip-base px-4 py-2 text-sm ${active?`grade-active-${grade}`:""}`} style={{padding:"8px 16px",fontSize:"13px"}}>
-          {grade}
-        </button>
-      );
-    }
-
-    // ═══════════════════════════════════════════════════════════════
-    // TRADE CARD
-    // ═══════════════════════════════════════════════════════════════
-    function TradeCard({ trade, index, onChange, onRemove }) {
-      const update = (key, val) => onChange({...trade,[key]:val});
-      const resultNum = parseFloat(trade.result);
-      const resultColor = isNaN(resultNum)?"text-zinc-400":resultNum>=0?"text-emerald-400":"text-red-400";
-      return (
-        <div className="border border-zinc-700 rounded-lg p-5 mb-4 bg-zinc-950">
-          {/* Header */}
-          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"16px"}}>
-            <div className="flex items-center gap-3">
-              <span className="text-zinc-500 font-mono text-sm">TRADE</span>
-              <span className="text-white font-mono text-xl font-bold">#{index+1}</span>
-              {trade.result!==""&&<span className={`font-mono text-lg font-bold ${resultColor}`}>{resultNum>=0?"+":""}{trade.result}</span>}
-            </div>
-            <button onClick={onRemove} style={{background:"none",border:"none",color:"#3f3f46",fontSize:"11px",cursor:"pointer"}}
-              onMouseOver={e=>e.target.style.color="#a1a1aa"} onMouseOut={e=>e.target.style.color="#3f3f46"}>REMOVE</button>
+      {/* Row 1: Time · Direction · Entry · Exit · Contracts */}
+      <div className="grid grid-cols-4 gap-3 mb-4" style={{gridTemplateColumns:"repeat(5,1fr)"}}>
+        <Field label="Time"><Input value={trade.time} onChange={v=>update("time",v)} placeholder="8:32"/></Field>
+        <Field label="Direction">
+          <div className="flex gap-2 mt-1">
+            <Chip label="LONG"  active={trade.direction==="LONG"}  onClick={()=>update("direction",trade.direction==="LONG"?"":"LONG")}  color="green"/>
+            <Chip label="SHORT" active={trade.direction==="SHORT"} onClick={()=>update("direction",trade.direction==="SHORT"?"":"SHORT")} color="red"/>
           </div>
+        </Field>
+        <Field label="Entry"><Input value={trade.entry} onChange={v=>update("entry",v)} placeholder="21,450"/></Field>
+        <Field label="Exit"><Input value={trade.exit} onChange={v=>update("exit",v)} placeholder="21,460"/></Field>
+        <Field label="Contracts" hint="# of contracts"><Input value={trade.contracts||""} onChange={v=>update("contracts",v)} placeholder="1"/></Field>
+      </div>
 
-          {/* Row 1: Time · Direction · Entry · Exit · Contracts */}
-          <div className="grid grid-cols-4 gap-3 mb-4">
-            <Field label="Time"><Input value={trade.time} onChange={v=>update("time",v)} placeholder="8:32"/></Field>
-            <Field label="Direction">
-              <div className="flex gap-2 mt-1">
-                <Chip label="LONG"  active={trade.direction==="LONG"}  onClick={()=>update("direction",trade.direction==="LONG"?"":"LONG")}  color="green"/>
-                <Chip label="SHORT" active={trade.direction==="SHORT"} onClick={()=>update("direction",trade.direction==="SHORT"?"":"SHORT")} color="red"/>
-              </div>
-            </Field>
-            <Field label="Entry"><Input value={trade.entry} onChange={v=>update("entry",v)} placeholder="21,450"/></Field>
-            <Field label="Exit"><Input value={trade.exit} onChange={v=>update("exit",v)} placeholder="21,460"/></Field>
-          </div>
+      {/* Result · MAE · MFE */}
+      <div className="grid grid-cols-3 gap-3 mb-4">
+        <Field label="Result ($)" hint="Actual P&L in dollars"><Input value={trade.result} onChange={v=>update("result",v)} placeholder="+50"/></Field>
+        <Field label="MAE (pts)" hint="How far against you before resolution — TIER 1"><Input value={trade.mae} onChange={v=>update("mae",v)} placeholder="8"/></Field>
+        <Field label="MFE (pts)" hint="How far in your favor before exit"><Input value={trade.mfe} onChange={v=>update("mfe",v)} placeholder="12"/></Field>
+      </div>
 
-          {/* Result · MAE · MFE · Contracts */}
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:"12px",marginBottom:"16px"}}>
-            <Field label="Result ($)" hint="Actual P&L in dollars">
-              <Input value={trade.result} onChange={v=>update("result",v)} placeholder="+50"/>
-            </Field>
-            <Field label="MAE (pts)" hint="How far against you — TIER 1">
-              <Input value={trade.mae} onChange={v=>update("mae",v)} placeholder="8"/>
-            </Field>
-            <Field label="MFE (pts)" hint="How far in your favor before exit">
-              <Input value={trade.mfe} onChange={v=>update("mfe",v)} placeholder="12"/>
-            </Field>
-            <Field label="Contracts" hint="Number of contracts traded">
-              <Input value={trade.contracts} onChange={v=>update("contracts",v)} placeholder="1"/>
-            </Field>
-          </div>
+      {/* IFT · Negotiable */}
+      <div className="grid grid-cols-2 gap-6 mb-4">
+        <Field label="Immediate Follow Through?" hint="Did price move your way almost immediately?">
+          <YesNo value={trade.immediateFollowThrough} onChange={v=>update("immediateFollowThrough",v)}/>
+        </Field>
+        <Field label="Market Negotiable?" hint="Did you have time to manage discretion, or did it move too fast?">
+          <YesNo value={trade.negotiable} onChange={v=>update("negotiable",v)}/>
+        </Field>
+      </div>
 
-          {/* IFT · Negotiable */}
-          <div className="grid grid-cols-2 gap-6 mb-4">
-            <Field label="Immediate Follow Through?" hint="Did price move your way almost immediately?">
-              <YesNo value={trade.immediateFollowThrough} onChange={v=>update("immediateFollowThrough",v)}/>
-            </Field>
-            <Field label="Market Negotiable?" hint="Did you have time to manage discretion, or did it move too fast?">
-              <YesNo value={trade.negotiable} onChange={v=>update("negotiable",v)}/>
-            </Field>
-          </div>
+      <Field label="Why Did I Take It?" hint="One sentence only. e.g. 'Failed auction at prior high'">
+        <TextArea value={trade.why} onChange={v=>update("why",v)} placeholder="One sentence." rows={1}/>
+      </Field>
 
-          {/* Why */}
-          <Field label="Why Did I Take It?" hint="One sentence only.">
-            <TextArea value={trade.why} onChange={v=>update("why",v)} placeholder="One sentence." rows={1}/>
-          </Field>
-
-          {/* Setup Tag */}
-          <Field label="Setup Tag">
-            <div className="flex flex-wrap gap-2">
-              {SETUP_TAGS.map(t=><Chip key={t} label={t} active={trade.setupTag===t} onClick={()=>update("setupTag",trade.setupTag===t?"":t)} color="blue"/>)}
-            </div>
-          </Field>
-
-          {/* Loss Tag */}
-          {!isNaN(resultNum)&&resultNum<0&&(
-            <Field label="Loss Category" hint="Tag every losing trade">
-              <div className="flex flex-wrap gap-2">
-                {LOSS_TAGS.map(t=><Chip key={t} label={t} active={trade.lossTag===t} onClick={()=>update("lossTag",trade.lossTag===t?"":t)} color="red"/>)}
-              </div>
-            </Field>
-          )}
-
-          {/* Market Did + Would Take Again */}
-          <div className="grid grid-cols-2 gap-6 mb-4">
-            <Field label="Did Market Do What I Expected?">
-              <YesNo value={trade.marketDid} onChange={v=>update("marketDid",v)}/>
-            </Field>
-            <Field label="Would Take Again?">
-              <div className="flex gap-2">
-                <Chip label="YES"   active={trade.wouldTakeAgain==="yes"}   onClick={()=>update("wouldTakeAgain",trade.wouldTakeAgain==="yes"?null:"yes")}   color="green"/>
-                <Chip label="MAYBE" active={trade.wouldTakeAgain==="maybe"} onClick={()=>update("wouldTakeAgain",trade.wouldTakeAgain==="maybe"?null:"maybe")} color="yellow"/>
-                <Chip label="NO"    active={trade.wouldTakeAgain==="no"}    onClick={()=>update("wouldTakeAgain",trade.wouldTakeAgain==="no"?null:"no")}    color="red"/>
-              </div>
-            </Field>
-          </div>
-
-          {/* Grade */}
-          <Field label="Trade Grade" hint="Grade the TRADE, not the result. A losing trade can be an A.">
-            <div className="flex gap-3">
-              {GRADE_OPTIONS.map(g=><GradeButton key={g} grade={g} active={trade.grade===g} onClick={()=>update("grade",trade.grade===g?"":g)}/>)}
-            </div>
-          </Field>
-
-          {/* Do Nothing */}
-          <Field label="What Would've Happened If I Did Nothing?" hint="Forces comparison vs. no trade.">
-            <TextArea value={trade.doNothingOutcome} onChange={v=>update("doNothingOutcome",v)} placeholder="e.g. 'Better entry 4 min later' / 'Saved $80'" rows={1}/>
-          </Field>
-
-          {/* Notes */}
-          <Field label="Notes / Lesson">
-            <TextArea value={trade.notes} onChange={v=>update("notes",v)} placeholder="One sentence lesson." rows={1}/>
-          </Field>
+      <Field label="Setup Tag">
+        <div className="flex flex-wrap gap-2">
+          {SETUP_TAGS.map(t=><Chip key={t} label={t} active={trade.setupTag===t} onClick={()=>update("setupTag",trade.setupTag===t?"":t)} color="blue"/>)}
         </div>
-      );
-    }
+      </Field>
 
-    // ═══════════════════════════════════════════════════════════════
-    // SUMMARY PANEL (used inside session view)
-    // ═══════════════════════════════════════════════════════════════
-    function SummaryPanel({ session }) {
-      const trades = session.trades;
-      const withResult = trades.filter(t=>t.result!==""&&!isNaN(parseFloat(t.result)));
-      const totalPnL = withResult.reduce((s,t)=>s+parseFloat(t.result),0);
-      const winners = withResult.filter(t=>parseFloat(t.result)>=0);
-      const losers  = withResult.filter(t=>parseFloat(t.result)<0);
-      const winRate = withResult.length>0?Math.round(winners.length/withResult.length*100):null;
+      {!isNaN(resultNum)&&resultNum<0&&(
+        <Field label="Loss Category" hint="Tag every losing trade">
+          <div className="flex flex-wrap gap-2">
+            {LOSS_TAGS.map(t=><Chip key={t} label={t} active={trade.lossTag===t} onClick={()=>update("lossTag",trade.lossTag===t?"":t)} color="red"/>)}
+          </div>
+        </Field>
+      )}
 
-      const maeAvg = (arr) => {
-        const f=arr.filter(t=>t.mae!==""&&!isNaN(parseFloat(t.mae)));
-        return f.length>0?(f.reduce((s,t)=>s+parseFloat(t.mae),0)/f.length).toFixed(1):null;
-      };
-      const mfeAvg = (arr) => {
-        const f=arr.filter(t=>t.mfe!==""&&!isNaN(parseFloat(t.mfe)));
-        return f.length>0?(f.reduce((s,t)=>s+parseFloat(t.mfe),0)/f.length).toFixed(1):null;
-      };
+      <div className="grid grid-cols-2 gap-6 mb-4">
+        <Field label="Did Market Do What I Expected?"><YesNo value={trade.marketDid} onChange={v=>update("marketDid",v)}/></Field>
+        <Field label="Would Take Again?">
+          <div className="flex gap-2">
+            <Chip label="YES"   active={trade.wouldTakeAgain==="yes"}   onClick={()=>update("wouldTakeAgain",trade.wouldTakeAgain==="yes"?null:"yes")}   color="green"/>
+            <Chip label="MAYBE" active={trade.wouldTakeAgain==="maybe"} onClick={()=>update("wouldTakeAgain",trade.wouldTakeAgain==="maybe"?null:"maybe")} color="yellow"/>
+            <Chip label="NO"    active={trade.wouldTakeAgain==="no"}    onClick={()=>update("wouldTakeAgain",trade.wouldTakeAgain==="no"?null:"no")}    color="red"/>
+          </div>
+        </Field>
+      </div>
 
-      const iftYes=trades.filter(t=>t.immediateFollowThrough===true).length;
-      const iftNo =trades.filter(t=>t.immediateFollowThrough===false).length;
-      const negYes=trades.filter(t=>t.negotiable===true).length;
-      const negNo =trades.filter(t=>t.negotiable===false).length;
-      const gradeCounts={A:0,B:0,C:0,F:0};
-      trades.forEach(t=>{if(t.grade)gradeCounts[t.grade]++;});
-      const lossTags={};
-      losers.forEach(t=>{if(t.lossTag)lossTags[t.lossTag]=(lossTags[t.lossTag]||0)+1;});
+      <Field label="Trade Grade" hint="Grade the TRADE, not the result. A losing trade can be an A.">
+        <div className="flex gap-3">
+          {GRADE_OPTIONS.map(g=><GradeButton key={g} grade={g} active={trade.grade===g} onClick={()=>update("grade",trade.grade===g?"":g)}/>)}
+        </div>
+      </Field>
 
-      const fiveQ=[
-        {q:"Did I follow rules?",key:"followedRules"},
-        {q:"Did I protect both accounts?",key:"protectedAccounts"},
-        {q:"Did I record everything?",key:"recorded"},
-        {q:"Did I review?",key:"reviewed"},
-        {q:"Did I survive?",key:"survived"},
-      ];
-      const [checklist,setChecklist]=useState({followedRules:null,protectedAccounts:null,recorded:null,reviewed:null,survived:null});
-      const gradeColors={A:"text-emerald-400",B:"text-blue-400",C:"text-yellow-400",F:"text-red-400"};
+      <Field label="What Would've Happened If I Did Nothing?" hint="Forces comparison vs. the monster move: no trade.">
+        <TextArea value={trade.doNothingOutcome} onChange={v=>update("doNothingOutcome",v)} placeholder="e.g. 'Better entry appeared 4 min later' / 'Saved $80' / 'Missed winner'" rows={1}/>
+      </Field>
+      <Field label="Notes / Lesson">
+        <TextArea value={trade.notes} onChange={v=>update("notes",v)} placeholder="One sentence lesson." rows={1}/>
+      </Field>
+    </div>
+  );
+}
 
-      return (
-        <div className="border border-zinc-700 rounded-lg p-5 bg-zinc-950 mb-6">
-          <div className="text-xs font-mono text-zinc-500 uppercase tracking-widest mb-4">Session Summary</div>
-          <div className="grid grid-cols-4 gap-4 mb-4">
-            {[
-              {label:"NET P&L",    value:(totalPnL>=0?"+":"")+totalPnL.toFixed(0), color:totalPnL>=0?"text-emerald-400":"text-red-400"},
-              {label:"WIN RATE",   value:winRate!==null?`${winRate}%`:"—",          color:"text-zinc-100"},
-              {label:"AVG MAE (W)",value:maeAvg(winners)???"—",                     color:"text-emerald-400"},
-              {label:"AVG MAE (L)",value:maeAvg(losers)???"—",                      color:"text-red-400"},
-            ].map(({label,value,color})=>(
-              <div key={label} className="bg-zinc-900 rounded p-3 text-center">
-                <div className="text-xs text-zinc-500 font-mono mb-1">{label}</div>
-                <div className={`text-2xl font-mono font-bold ${color}`}>{value}</div>
+/* ─── SummaryPanel (session view) ─── */
+function SummaryPanel({session}){
+  const trades=session.trades||[];
+  const withResult=trades.filter(t=>t.result!==""&&!isNaN(parseFloat(t.result)));
+  const totalPnL=withResult.reduce((s,t)=>s+parseFloat(t.result),0);
+  const winners=withResult.filter(t=>parseFloat(t.result)>=0);
+  const losers=withResult.filter(t=>parseFloat(t.result)<0);
+  const winRate=withResult.length>0?Math.round((winners.length/withResult.length)*100):null;
+  const winMAE=winners.filter(t=>t.mae!=="").length>0?(winners.filter(t=>t.mae!=="").reduce((s,t)=>s+parseFloat(t.mae||0),0)/winners.filter(t=>t.mae!=="").length).toFixed(1):null;
+  const lossMAE=losers.filter(t=>t.mae!=="").length>0?(losers.filter(t=>t.mae!=="").reduce((s,t)=>s+parseFloat(t.mae||0),0)/losers.filter(t=>t.mae!=="").length).toFixed(1):null;
+  const winMFE=winners.filter(t=>t.mfe!=="").length>0?(winners.filter(t=>t.mfe!=="").reduce((s,t)=>s+parseFloat(t.mfe||0),0)/winners.filter(t=>t.mfe!=="").length).toFixed(1):null;
+  const lossMFE=losers.filter(t=>t.mfe!=="").length>0?(losers.filter(t=>t.mfe!=="").reduce((s,t)=>s+parseFloat(t.mfe||0),0)/losers.filter(t=>t.mfe!=="").length).toFixed(1):null;
+  const iftYes=trades.filter(t=>t.immediateFollowThrough===true).length;
+  const iftNo=trades.filter(t=>t.immediateFollowThrough===false).length;
+  const negYes=trades.filter(t=>t.negotiable===true).length;
+  const negNo=trades.filter(t=>t.negotiable===false).length;
+  const gradeCounts={A:0,B:0,C:0,F:0};
+  trades.forEach(t=>{if(t.grade)gradeCounts[t.grade]++;});
+  const lossTags={};
+  losers.forEach(t=>{if(t.lossTag)lossTags[t.lossTag]=(lossTags[t.lossTag]||0)+1;});
+  const fiveQ=[
+    {q:"Did I follow rules?",key:"followedRules"},
+    {q:"Did I protect both accounts?",key:"protectedAccounts"},
+    {q:"Did I record everything?",key:"recorded"},
+    {q:"Did I review?",key:"reviewed"},
+    {q:"Did I survive?",key:"survived"},
+  ];
+  const [checklist,setChecklist]=useState({followedRules:null,protectedAccounts:null,recorded:null,reviewed:null,survived:null});
+  const gradeColors={A:"text-emerald-400",B:"text-blue-400",C:"text-yellow-400",F:"text-red-400"};
+  return(
+    <div className="border border-zinc-700 rounded-lg p-5 bg-zinc-950 mb-6">
+      <div className="text-xs font-mono text-zinc-500 uppercase tracking-widest mb-4">Session Summary</div>
+      <div className="grid grid-cols-4 gap-4 mb-4">
+        {[
+          {label:"NET P&L",value:(totalPnL>=0?"+":"")+totalPnL.toFixed(0),color:totalPnL>=0?"text-emerald-400":"text-red-400"},
+          {label:"WIN RATE",value:winRate!==null?`${winRate}%`:"—",color:"text-zinc-100"},
+          {label:"AVG MAE (W)",value:winMAE!==null?winMAE:"—",color:"text-emerald-400"},
+          {label:"AVG MAE (L)",value:lossMAE!==null?lossMAE:"—",color:"text-red-400"},
+        ].map(({label,value,color})=>(
+          <div key={label} className="bg-zinc-900 rounded p-3 text-center">
+            <div className="text-xs text-zinc-500 font-mono mb-1">{label}</div>
+            <div className={`text-2xl font-mono font-bold ${color}`}>{value}</div>
+          </div>
+        ))}
+      </div>
+      <div className="grid grid-cols-4 gap-4 mb-4">
+        {[
+          {label:"AVG MFE (W)",value:winMFE!==null?winMFE:"—",color:"text-emerald-400"},
+          {label:"AVG MFE (L)",value:lossMFE!==null?lossMFE:"—",color:"text-red-400"},
+          {label:"IFT Y/N",value:`${iftYes} / ${iftNo}`,color:"text-zinc-100"},
+          {label:"NEG Y/N",value:`${negYes} / ${negNo}`,color:"text-zinc-100"},
+        ].map(({label,value,color})=>(
+          <div key={label} className="bg-zinc-900 rounded p-3 text-center">
+            <div className="text-xs text-zinc-500 font-mono mb-1">{label}</div>
+            <div className={`text-2xl font-mono font-bold ${color}`}>{value}</div>
+          </div>
+        ))}
+      </div>
+      <div className="grid grid-cols-2 gap-4 mb-4">
+        <div className="bg-zinc-900 rounded p-3">
+          <div className="text-xs text-zinc-500 font-mono mb-2">TRADE GRADES</div>
+          <div className="flex gap-3">
+            {["A","B","C","F"].map(g=>(
+              <div key={g} className="text-center">
+                <div className={`text-xl font-mono font-bold ${gradeColors[g]}`}>{gradeCounts[g]}</div>
+                <div className="text-xs text-zinc-500 font-mono">{g}</div>
               </div>
             ))}
           </div>
-          {/* Grades + IFT */}
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            <div className="bg-zinc-900 rounded p-3">
-              <div className="text-xs text-zinc-500 font-mono mb-2">TRADE GRADES</div>
-              <div className="flex gap-3">
-                {["A","B","C","F"].map(g=>(
-                  <div key={g} className="text-center">
-                    <div className={`text-xl font-mono font-bold ${gradeColors[g]}`}>{gradeCounts[g]}</div>
-                    <div className="text-xs text-zinc-500 font-mono">{g}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="bg-zinc-900 rounded p-3">
-              <div className="text-xs text-zinc-500 font-mono mb-2">FOLLOW THROUGH / NEGOTIABLE</div>
-              <div className="flex gap-4 text-xs font-mono">
-                <div><span className="text-emerald-400">{iftYes}</span> IFT Yes / <span className="text-red-400">{iftNo}</span> No</div>
-                <div><span className="text-emerald-400">{negYes}</span> Neg Yes / <span className="text-red-400">{negNo}</span> No</div>
-              </div>
-            </div>
-          </div>
-          {/* Loss breakdown */}
-          {Object.keys(lossTags).length>0&&(
-            <div className="bg-zinc-900 rounded p-3 mb-4">
-              <div className="text-xs text-zinc-500 font-mono mb-2">LOSS BREAKDOWN</div>
-              <div className="flex flex-wrap gap-3">
-                {Object.entries(lossTags).sort((a,b)=>b[1]-a[1]).map(([tag,count])=>(
-                  <div key={tag} className="flex items-center gap-1">
-                    <span className="text-red-400 font-mono font-bold text-sm">{count}</span>
-                    <span className="text-zinc-400 font-mono text-xs">{tag}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-          {/* Post-session checklist */}
+        </div>
+        {Object.keys(lossTags).length>0&&(
           <div className="bg-zinc-900 rounded p-3">
-            <div className="text-xs text-zinc-500 font-mono mb-3">POST-SESSION CHECKLIST</div>
-            <div className="space-y-2">
-              {fiveQ.map(({q,key})=>(
-                <div key={key} style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                  <span className="text-zinc-300 font-mono text-xs">{q}</span>
-                  <YesNo value={checklist[key]} onChange={v=>setChecklist(prev=>({...prev,[key]:v}))}/>
+            <div className="text-xs text-zinc-500 font-mono mb-2">LOSS BREAKDOWN</div>
+            <div className="flex flex-wrap gap-3">
+              {Object.entries(lossTags).sort((a,b)=>b[1]-a[1]).map(([tag,count])=>(
+                <div key={tag} className="flex items-center gap-1">
+                  <span className="text-red-400 font-mono font-bold text-sm">{count}</span>
+                  <span className="text-zinc-400 font-mono text-xs">{tag}</span>
                 </div>
               ))}
             </div>
           </div>
-        </div>
-      );
-    }
-
-    // ═══════════════════════════════════════════════════════════════
-    // TRADES AVOIDED
-    // ═══════════════════════════════════════════════════════════════
-    function TradesAvoided({ avoided, setAvoided }) {
-      const addAvoided = ()=>setAvoided(prev=>[...prev,{id:Date.now()+Math.random(),setup:"",passed:null,outcome:""}]);
-      const update=(id,key,val)=>setAvoided(prev=>prev.map(a=>a.id===id?{...a,[key]:val}:a));
-      const remove=(id)=>setAvoided(prev=>prev.filter(a=>a.id!==id));
-      return (
-        <div className="border border-zinc-700 rounded-lg p-5 mb-6 bg-zinc-950">
-          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"16px"}}>
-            <div>
-              <div className="text-xs font-mono text-zinc-500 uppercase tracking-widest">Trades Avoided</div>
-              <div className="text-xs text-zinc-600 italic mt-1">Every correctly avoided garbage setup = +1 point. This is a skill.</div>
-            </div>
-            <button onClick={addAvoided} className="chip-base" style={{fontSize:"11px"}}>+ ADD</button>
-          </div>
-          {avoided.length===0&&<div className="text-zinc-700 font-mono text-xs text-center py-4">No avoided setups logged yet.</div>}
-          {avoided.map(a=>(
-            <div key={a.id} className="border border-zinc-800 rounded p-3 mb-2 grid grid-cols-3 gap-3" style={{alignItems:"end"}}>
-              <div>
-                <div className="text-xs text-zinc-500 font-mono mb-1">Setup Seen</div>
-                <Input value={a.setup} onChange={v=>update(a.id,"setup",v)} placeholder="Chop reversal" small/>
-              </div>
-              <div>
-                <div className="text-xs text-zinc-500 font-mono mb-1">Passed?</div>
-                <YesNo value={a.passed} onChange={v=>update(a.id,"passed",v)}/>
-              </div>
-              <div>
-                <div className="text-xs text-zinc-500 font-mono mb-1">Outcome (if traded)</div>
-                <Input value={a.outcome} onChange={v=>update(a.id,"outcome",v)} placeholder="Would've lost" small/>
-              </div>
+        )}
+      </div>
+      <div className="bg-zinc-900 rounded p-3">
+        <div className="text-xs text-zinc-500 font-mono mb-3">POST-SESSION CHECKLIST</div>
+        <div className="space-y-2">
+          {fiveQ.map(({q,key})=>(
+            <div key={key} style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+              <span className="text-zinc-300 font-mono text-xs">{q}</span>
+              <YesNo value={checklist[key]} onChange={v=>setChecklist(prev=>({...prev,[key]:v}))}/>
             </div>
           ))}
-          {avoided.length>0&&(
-            <div className="mt-2 text-right">
-              <span className="font-mono text-emerald-400 text-sm font-bold">{avoided.filter(a=>a.passed===true).length}</span>
-              <span className="font-mono text-zinc-500 text-xs"> setups correctly avoided</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── TradesAvoided ─── */
+function TradesAvoided({avoided,setAvoided}){
+  const addAvoided=()=>setAvoided(prev=>[...prev,{id:Date.now()+Math.random(),setup:"",passed:null,outcome:""}]);
+  const update=(id,key,val)=>setAvoided(prev=>prev.map(a=>a.id===id?{...a,[key]:val}:a));
+  const remove=(id)=>setAvoided(prev=>prev.filter(a=>a.id!==id));
+  return(
+    <div className="border border-zinc-700 rounded-lg p-5 mb-6 bg-zinc-950">
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"16px"}}>
+        <div>
+          <div className="text-xs font-mono text-zinc-500 uppercase tracking-widest">Trades Avoided</div>
+          <div className="text-xs text-zinc-600 italic mt-1">Every correctly avoided garbage setup = +1 point. This is a skill.</div>
+        </div>
+        <button onClick={addAvoided} className="chip-base" style={{fontSize:"11px"}}>+ ADD</button>
+      </div>
+      {avoided.length===0&&<div className="text-zinc-700 font-mono text-xs text-center py-4">No avoided setups logged yet.</div>}
+      {avoided.map(a=>(
+        <div key={a.id} className="border border-zinc-800 rounded p-3 mb-2 grid grid-cols-3 gap-3" style={{alignItems:"end"}}>
+          <div>
+            <div className="text-xs text-zinc-500 font-mono mb-1">Setup Seen</div>
+            <Input value={a.setup} onChange={v=>update(a.id,"setup",v)} placeholder="Chop reversal" small/>
+          </div>
+          <div>
+            <div className="text-xs text-zinc-500 font-mono mb-1">Passed?</div>
+            <YesNo value={a.passed} onChange={v=>update(a.id,"passed",v)}/>
+          </div>
+          <div>
+            <div className="text-xs text-zinc-500 font-mono mb-1">Outcome (if traded)</div>
+            <Input value={a.outcome} onChange={v=>update(a.id,"outcome",v)} placeholder="Would've lost" small/>
+          </div>
+        </div>
+      ))}
+      {avoided.length>0&&(
+        <div className="mt-2 text-right">
+          <span className="font-mono text-emerald-400 text-sm font-bold">{avoided.filter(a=>a.passed===true).length}</span>
+          <span className="font-mono text-zinc-500 text-xs"> setups correctly avoided</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── Grand Slams ─── */
+function GrandSlams({stats}){
+  const slams=[
+    {label:"Trades Reviewed",val:stats.totalTrades,targets:[100,500,1000]},
+    {label:"Sessions Logged",val:stats.totalSessions,targets:[30,100,250]},
+    {label:"Consecutive Logged",val:stats.currentStreak,targets:[5,10,20,50]},
+    {label:"Chop Avoided",val:stats.totalAvoided,targets:[20,50,100]},
+    {label:"Correct Env Calls",val:stats.correctEnvCalls,targets:[10,30,75]},
+    {label:"A-Grade Trades",val:stats.aGrades,targets:[25,100,250]},
+    {label:"F-Grade Free Streak",val:stats.freeStreak,targets:[10,25,50]},
+    {label:"Non-Expansion Sessions",val:stats.nonExpansionSessions,targets:[10,30,60]},
+  ];
+  return(
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+      {slams.map(s=>{
+        const next=s.targets.find(t=>t>s.val)||s.targets[s.targets.length-1];
+        const prev=s.targets[s.targets.indexOf(next)-1]||0;
+        const pct=next>prev?Math.min(100,((s.val-prev)/(next-prev))*100):100;
+        const done=s.val>=next;
+        return(
+          <div key={s.label} className="dash-card" style={{padding:"12px 14px",border:`1px solid ${done?C.green:C.border2}!important`}}>
+            <div style={{...mono,color:done?C.greenText:C.muted,fontSize:9,letterSpacing:"0.1em",marginBottom:4}}>{s.label}</div>
+            <div style={{display:"flex",alignItems:"baseline",gap:6,marginBottom:8}}>
+              <span style={{...mono,color:done?C.green:C.text,fontSize:18,fontWeight:700}}>{s.val}</span>
+              <span style={{...mono,color:C.faint,fontSize:10}}>/ {next}</span>
+            </div>
+            <div style={{background:C.surface,borderRadius:2,height:3}}>
+              <div style={{background:done?C.green:C.blue,height:3,borderRadius:2,width:`${pct}%`,transition:"width .5s"}}/>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ─── Frequency table ─── */
+function FreqTable({title,data,color,unit="pts"}){
+  if(!data||data.length===0)return(
+    <div className="dash-card" style={{padding:16,marginBottom:16}}>
+      <SectionHead mt={0}>{title}</SectionHead>
+      <div style={{...mono,color:C.faint,fontSize:10,textAlign:"center",padding:"12px 0"}}>No data yet.</div>
+    </div>
+  );
+  const max=Math.max(...data.map(d=>d.count));
+  return(
+    <div className="dash-card" style={{padding:16,marginBottom:16}}>
+      <SectionHead mt={0}>{title}</SectionHead>
+      <div className="tbl-wrap">
+        <table style={{...mono,width:"100%",borderCollapse:"collapse",fontSize:10}}>
+          <thead>
+            <tr style={{borderBottom:`1px solid ${C.border2}`}}>
+              <th style={{color:C.muted,padding:"6px 10px",textAlign:"left",fontWeight:400}}>Value ({unit})</th>
+              <th style={{color:C.muted,padding:"6px 10px",textAlign:"left",fontWeight:400}}>Count</th>
+              <th style={{color:C.muted,padding:"6px 10px",textAlign:"left",fontWeight:400,width:"50%"}}>Frequency</th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.sort((a,b)=>parseFloat(a.val)-parseFloat(b.val)).map((row,i)=>(
+              <tr key={i} style={{borderBottom:`1px solid ${C.border}`}}>
+                <td style={{padding:"6px 10px",color:C.text,fontWeight:700}}>{row.val}</td>
+                <td style={{padding:"6px 10px",color:color||C.text,fontWeight:700}}>{row.count}</td>
+                <td style={{padding:"6px 10px"}}>
+                  <div style={{background:C.surface,borderRadius:2,height:6,width:"100%"}}>
+                    <div style={{background:color||C.blue,borderRadius:2,height:6,width:`${max>0?(row.count/max)*100:0}%`}}/>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Contract table ─── */
+function ContractTable({title,trades}){
+  if(!trades||trades.length===0)return(
+    <div className="dash-card" style={{padding:16,marginBottom:16}}>
+      <SectionHead mt={0}>{title}</SectionHead>
+      <div style={{...mono,color:C.faint,fontSize:10,textAlign:"center",padding:"12px 0"}}>No data yet.</div>
+    </div>
+  );
+  const byC={};
+  trades.forEach(t=>{
+    const c=t.contracts||"—";
+    if(!byC[c])byC[c]={count:0,pnl:0,wins:0,losses:0};
+    byC[c].count++;
+    const r=parseFloat(t.result);
+    if(!isNaN(r)){byC[c].pnl+=r;r>=0?byC[c].wins++:byC[c].losses++;}
+  });
+  const rows=Object.entries(byC).sort((a,b)=>{const n=v=>parseFloat(v)||Infinity;return n(a[0])-n(b[0]);});
+  return(
+    <div className="dash-card" style={{padding:16,marginBottom:16}}>
+      <SectionHead mt={0}>{title}</SectionHead>
+      <div className="tbl-wrap">
+        <table style={{...mono,width:"100%",borderCollapse:"collapse",fontSize:10}}>
+          <thead>
+            <tr style={{borderBottom:`1px solid ${C.border2}`}}>
+              {["Contracts","Trades","Wins","Losses","Win %","Net P&L"].map(h=>(
+                <th key={h} style={{color:C.muted,padding:"6px 10px",textAlign:"left",fontWeight:400,fontSize:9,letterSpacing:"0.1em"}}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(([contracts,d],i)=>{
+              const wr=d.count>0?((d.wins/d.count)*100).toFixed(0):"—";
+              return(
+                <tr key={i} style={{borderBottom:`1px solid ${C.border}`}}>
+                  <td style={{padding:"6px 10px",color:C.text,fontWeight:700}}>{contracts}</td>
+                  <td style={{padding:"6px 10px",color:C.muted}}>{d.count}</td>
+                  <td style={{padding:"6px 10px",color:C.green}}>{d.wins}</td>
+                  <td style={{padding:"6px 10px",color:C.red}}>{d.losses}</td>
+                  <td style={{padding:"6px 10px",color:parseInt(wr)>=55?C.green:parseInt(wr)>=45?C.yellow:C.red}}>{wr==="—"?"—":`${wr}%`}</td>
+                  <td style={{padding:"6px 10px",color:d.pnl>=0?C.green:C.red,fontWeight:700}}>{d.pnl>=0?"+":""}{d.pnl.toFixed(0)}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Win/Loss trade table ─── */
+function WinLossTable({title,trades,color}){
+  if(!trades||trades.length===0)return(
+    <div className="dash-card" style={{padding:16,marginBottom:16}}>
+      <SectionHead mt={0}>{title}</SectionHead>
+      <div style={{...mono,color:C.faint,fontSize:10,textAlign:"center",padding:"12px 0"}}>No data yet.</div>
+    </div>
+  );
+  return(
+    <div className="dash-card" style={{padding:16,marginBottom:16}}>
+      <SectionHead mt={0}>{title} <span style={{color:color||C.text}}>({trades.length})</span></SectionHead>
+      <div className="tbl-wrap">
+        <table style={{...mono,width:"100%",borderCollapse:"collapse",fontSize:10}}>
+          <thead>
+            <tr style={{borderBottom:`1px solid ${C.border2}`}}>
+              {["Date","Dir","Contracts","Result","MAE","MFE","Grade","Setup","Why"].map(h=>(
+                <th key={h} style={{color:C.muted,padding:"6px 10px",textAlign:"left",fontWeight:400,fontSize:9,letterSpacing:"0.1em"}}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {trades.map((t,i)=>{
+              const res=parseFloat(t.result);
+              return(
+                <tr key={i} style={{borderBottom:`1px solid ${C.border}`}}>
+                  <td style={{padding:"6px 10px",color:C.muted}}>{t.sessionDate}</td>
+                  <td style={{padding:"6px 10px",color:t.direction==="LONG"?C.green:t.direction==="SHORT"?C.red:C.muted}}>{t.direction||"—"}</td>
+                  <td style={{padding:"6px 10px",color:C.muted}}>{t.contracts||"—"}</td>
+                  <td style={{padding:"6px 10px",color:isNaN(res)?C.muted:res>=0?C.green:C.red,fontWeight:700}}>{isNaN(res)?t.result:`${res>=0?"+":""}${res}`}</td>
+                  <td style={{padding:"6px 10px",color:C.yellow}}>{t.mae||"—"}</td>
+                  <td style={{padding:"6px 10px",color:C.blue}}>{t.mfe||"—"}</td>
+                  <td style={{padding:"6px 10px",color:t.grade==="A"?C.green:t.grade==="B"?C.blue:t.grade==="C"?C.yellow:t.grade==="F"?C.red:C.muted,fontWeight:700}}>{t.grade||"—"}</td>
+                  <td style={{padding:"6px 10px",color:C.muted}}>{t.setupTag||"—"}</td>
+                  <td style={{padding:"6px 10px",color:C.muted,maxWidth:160,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.why||"—"}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Analytics Dashboard ─── */
+function AnalyticsDashboard({historicalSessions}){
+  const [dashView,setDashView]=useState("overview");
+
+  if(!historicalSessions||historicalSessions.length===0){
+    return(
+      <div className="border border-zinc-700 rounded-lg p-8 bg-zinc-950 text-center font-mono text-xs text-zinc-500">
+        No historical session data detected. Log your first session and hit ARCHIVE SESSION to unlock analytics.
+      </div>
+    );
+  }
+
+  /* ── Compute all stats ── */
+  const allTrades=historicalSessions.flatMap(s=>(s.trades||[]).map(t=>({...t,sessionDate:s.date,env:s.environment})));
+  const withRes=allTrades.filter(t=>t.result!==""&&!isNaN(parseFloat(t.result)));
+  const winners=withRes.filter(t=>parseFloat(t.result)>=0);
+  const losers=withRes.filter(t=>parseFloat(t.result)<0);
+  const totalPnL=withRes.reduce((s,t)=>s+parseFloat(t.result),0);
+  const winRate=withRes.length>0?(winners.length/withRes.length*100).toFixed(1):"—";
+  const avgWin=winners.length>0?(winners.reduce((s,t)=>s+parseFloat(t.result),0)/winners.length).toFixed(0):0;
+  const avgLoss=losers.length>0?(losers.reduce((s,t)=>s+parseFloat(t.result),0)/losers.length).toFixed(0):0;
+
+  /* MAE/MFE averages */
+  const winMAE_avg=winners.filter(t=>t.mae!=="").length>0?(winners.filter(t=>t.mae!=="").reduce((s,t)=>s+parseFloat(t.mae),0)/winners.filter(t=>t.mae!=="").length).toFixed(1):"—";
+  const lossMAE_avg=losers.filter(t=>t.mae!=="").length>0?(losers.filter(t=>t.mae!=="").reduce((s,t)=>s+parseFloat(t.mae),0)/losers.filter(t=>t.mae!=="").length).toFixed(1):"—";
+  const winMFE_avg=winners.filter(t=>t.mfe!=="").length>0?(winners.filter(t=>t.mfe!=="").reduce((s,t)=>s+parseFloat(t.mfe),0)/winners.filter(t=>t.mfe!=="").length).toFixed(1):"—";
+  const lossMFE_avg=losers.filter(t=>t.mfe!=="").length>0?(losers.filter(t=>t.mfe!=="").reduce((s,t)=>s+parseFloat(t.mfe),0)/losers.filter(t=>t.mfe!=="").length).toFixed(1):"—";
+
+  /* MAE/MFE frequency maps */
+  const maeWinFreq={},maeLossFreq={},mfeWinFreq={},mfeLossFreq={};
+  winners.forEach(t=>{if(t.mae!==""){const k=parseFloat(t.mae).toFixed(1);maeWinFreq[k]=(maeWinFreq[k]||0)+1;}});
+  losers.forEach(t=>{if(t.mae!==""){const k=parseFloat(t.mae).toFixed(1);maeLossFreq[k]=(maeLossFreq[k]||0)+1;}});
+  winners.forEach(t=>{if(t.mfe!==""){const k=parseFloat(t.mfe).toFixed(1);mfeWinFreq[k]=(mfeWinFreq[k]||0)+1;}});
+  losers.forEach(t=>{if(t.mfe!==""){const k=parseFloat(t.mfe).toFixed(1);mfeLossFreq[k]=(mfeLossFreq[k]||0)+1;}});
+  const maeWinData=Object.entries(maeWinFreq).map(([val,count])=>({val,count}));
+  const maeLossData=Object.entries(maeLossFreq).map(([val,count])=>({val,count}));
+  const mfeWinData=Object.entries(mfeWinFreq).map(([val,count])=>({val,count}));
+  const mfeLossData=Object.entries(mfeLossFreq).map(([val,count])=>({val,count}));
+
+  /* Charts */
+  const pnlCurve=withRes.map((t,i)=>({i:i+1,pnl:withRes.slice(0,i+1).reduce((s,x)=>s+parseFloat(x.result),0),date:t.sessionDate}));
+  const byDate={};
+  withRes.forEach(t=>{byDate[t.sessionDate]=(byDate[t.sessionDate]||0)+parseFloat(t.result);});
+  const dailyBars=Object.entries(byDate).sort().map(([date,pnl])=>({date:date.slice(5),pnl}));
+
+  /* Setup/loss breakdown */
+  const lossTags={};
+  losers.forEach(t=>{if(t.lossTag)lossTags[t.lossTag]=(lossTags[t.lossTag]||0)+1;});
+  const topLoss=Object.entries(lossTags).sort((a,b)=>b[1]-a[1]);
+  const setupWR={};
+  withRes.forEach(t=>{if(!t.setupTag)return;if(!setupWR[t.setupTag])setupWR[t.setupTag]={w:0,l:0};parseFloat(t.result)>=0?setupWR[t.setupTag].w++:setupWR[t.setupTag].l++;});
+  const setupsMap={};
+  allTrades.forEach(t=>{if(t.setupTag)setupsMap[t.setupTag]=(setupsMap[t.setupTag]||0)+1;});
+  const maxSetupVol=Math.max(...Object.values(setupsMap),0);
+
+  /* Grades / IFT / Neg / Env */
+  const grades={A:0,B:0,C:0,F:0};
+  allTrades.forEach(t=>{if(t.grade)grades[t.grade]++;});
+  const iftYes=allTrades.filter(t=>t.immediateFollowThrough===true).length;
+  const iftNo=allTrades.filter(t=>t.immediateFollowThrough===false).length;
+  const negYes=allTrades.filter(t=>t.negotiable===true).length;
+  const negNo=allTrades.filter(t=>t.negotiable===false).length;
+  const envPnL={};
+  historicalSessions.forEach(s=>{
+    if(!s.environment)return;
+    const spnl=(s.trades||[]).filter(t=>t.result!==""&&!isNaN(parseFloat(t.result))).reduce((x,t)=>x+parseFloat(t.result),0);
+    if(!envPnL[s.environment])envPnL[s.environment]={pnl:0,count:0};
+    envPnL[s.environment].pnl+=spnl;envPnL[s.environment].count++;
+  });
+
+  /* Grand Slam stats */
+  const totalAvoided=historicalSessions.reduce((s,x)=>((x.avoidedSetups||x.avoided||[]).filter(a=>a.passed===true).length+s),0);
+  const correctEnvCalls=historicalSessions.filter(s=>s.environmentCorrect===true).length;
+  let freeStreak=0;
+  for(let i=allTrades.length-1;i>=0;i--){if(allTrades[i].grade==="F")break;if(allTrades[i].grade)freeStreak++;}
+  const nonExpansionSessions=historicalSessions.filter(s=>s.environment&&s.environment!=="EXPANSION"&&s.environment!=="CHOP").length;
+  const gStats={totalTrades:allTrades.length,totalSessions:historicalSessions.length,currentStreak:historicalSessions.length,totalAvoided,correctEnvCalls,aGrades:grades.A,freeStreak,nonExpansionSessions};
+
+  /* Session chart data */
+  const chartData=historicalSessions.map((s,idx)=>{
+    const ct=(s.trades||[]).filter(t=>t.result!==""&&!isNaN(parseFloat(t.result)));
+    return{name:s.date||`S${idx+1}`,"Net P&L":ct.reduce((sum,t)=>sum+parseFloat(t.result),0),Trades:ct.length};
+  });
+
+  const TAB=(id,label)=>(
+    <button onClick={()=>setDashView(id)} style={{...mono,background:"none",border:"none",borderBottom:`2px solid ${dashView===id?C.blue:"transparent"}`,color:dashView===id?C.blueText:C.muted,padding:"8px 14px",fontSize:10,cursor:"pointer",letterSpacing:"0.1em",fontWeight:dashView===id?700:400}}>
+      {label}
+    </button>
+  );
+
+  return(
+    <div style={{background:C.bg,borderRadius:12,border:`1px solid ${C.border}`,overflow:"hidden"}} className="dash-inner">
+      {/* Sub-header */}
+      <div style={{padding:"12px 20px",borderBottom:`1px solid ${C.border}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <div style={{...mono,color:C.muted,fontSize:9,letterSpacing:"0.2em"}}>ANALYTICS DASHBOARD</div>
+        <div style={{...mono,color:totalPnL>=0?C.green:C.red,fontSize:18,fontWeight:700}}>
+          {totalPnL>=0?"+":""}{totalPnL.toFixed(0)} <span style={{color:C.muted,fontSize:10,fontWeight:400}}>total</span>
+        </div>
+      </div>
+      {/* Tabs */}
+      <div className="dash-tab-bar" style={{padding:"0 20px",display:"flex",flexWrap:"wrap",borderBottom:`1px solid ${C.border}`}}>
+        {TAB("overview","OVERVIEW")}
+        {TAB("slams","GRAND SLAMS")}
+        {TAB("maemfe","MAE / MFE")}
+        {TAB("contracts","CONTRACTS")}
+        {TAB("winners","WINNING TRADES")}
+        {TAB("losers","LOSING TRADES")}
+        {TAB("alltrades","ALL TRADES")}
+        {TAB("sessions","SESSION LOG")}
+      </div>
+
+      <div style={{padding:"20px 16px",maxWidth:900,margin:"0 auto"}}>
+
+        {/* ── OVERVIEW ── */}
+        {dashView==="overview"&&<>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginBottom:16}}>
+            <Stat label="NET P&L ($)" value={`${totalPnL>=0?"+":""}${totalPnL.toFixed(0)}`} color={totalPnL>=0?C.green:C.red} sub={`${historicalSessions.length} sessions`}/>
+            <Stat label="WIN RATE" value={`${winRate}%`} sub={`${winners.length}W / ${losers.length}L`} color={parseFloat(winRate)>=55?C.green:parseFloat(winRate)>=45?C.yellow:C.red}/>
+            <Stat label="AVG WIN / LOSS" value={`+${avgWin}`} sub={`avg loss ${avgLoss}`} color={C.green}/>
+            <Stat label="TRADES REVIEWED" value={allTrades.length} sub={`${totalAvoided} avoided`} color={C.blue}/>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginBottom:16}}>
+            <Stat label="AVG MAE WINNERS" value={winMAE_avg} color={C.green} sub="avg adverse excursion (pts)"/>
+            <Stat label="AVG MAE LOSERS"  value={lossMAE_avg} color={C.red}  sub="avg adverse excursion (pts)"/>
+            <Stat label="AVG MFE WINNERS" value={winMFE_avg} color={C.green} sub="avg max favorable (pts)"/>
+            <Stat label="AVG MFE LOSERS"  value={lossMFE_avg} color={C.red}  sub="avg max favorable (pts)"/>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginBottom:24}}>
+            <Stat label="IFT YES / NO"    value={`${iftYes} / ${iftNo}`}   sub="immediate follow-through"/>
+            <Stat label="NEGOTIABLE Y/N"  value={`${negYes} / ${negNo}`}   sub="market gave time"/>
+            <Stat label="ENV CORRECT"     value={correctEnvCalls}           sub={`of ${historicalSessions.length} sessions`} color={C.blue}/>
+            <Stat label="AVOIDED"         value={totalAvoided}              sub="garbage setups skipped" color={C.yellow}/>
+          </div>
+
+          <SectionHead mt={0}>EQUITY PERFORMANCE CURVE</SectionHead>
+          {pnlCurve.length>0&&(
+            <div className="dash-card" style={{padding:"16px 8px",marginBottom:20}}>
+              <ResponsiveContainer width="100%" height={180}>
+                <LineChart data={pnlCurve}>
+                  <XAxis dataKey="i" tick={{fill:C.muted,fontSize:9,fontFamily:"monospace"}} axisLine={false} tickLine={false}/>
+                  <YAxis tick={{fill:C.muted,fontSize:9,fontFamily:"monospace"}} axisLine={false} tickLine={false}/>
+                  <ReferenceLine y={0} stroke={C.border2} strokeDasharray="3 3"/>
+                  <Tooltip content={<ChartTT/>}/>
+                  <Line type="monotone" dataKey="pnl" name="Cumulative" stroke={C.blue} strokeWidth={2} dot={false}/>
+                </LineChart>
+              </ResponsiveContainer>
             </div>
           )}
-        </div>
-      );
-    }
 
-    // ═══════════════════════════════════════════════════════════════
-    // DASHBOARD — color constants
-    // ═══════════════════════════════════════════════════════════════
-    const DC = {
-      bg:"#08080a", surface:"#0f0f12", card:"#141417",
-      border:"#27272a", border2:"#3f3f46",
-      text:"#e4e4e7", muted:"#71717a", faint:"#3f3f46",
-      green:"#10b981", greenBg:"#064e3b", greenText:"#6ee7b7",
-      red:"#ef4444", redBg:"#450a0a", redText:"#fca5a5",
-      blue:"#6366f1", blueBg:"#1e1b4b", blueText:"#a5b4fc",
-      yellow:"#eab308", yellowBg:"#422006", yellowText:"#fde047",
-      purple:"#a855f7",
-    };
-    const mono = {fontFamily:"'JetBrains Mono','Courier New',monospace"};
-
-    function DStat({ label, value, sub, color }) {
-      return (
-        <div style={{background:DC.card,border:`1px solid ${DC.border2}`,borderRadius:8,padding:"14px 16px"}}>
-          <div style={{...mono,color:DC.muted,fontSize:9,letterSpacing:"0.15em",marginBottom:6}}>{label}</div>
-          <div style={{...mono,color:color||DC.text,fontSize:22,fontWeight:700}}>{value}</div>
-          {sub&&<div style={{...mono,color:DC.faint,fontSize:10,marginTop:4}}>{sub}</div>}
-        </div>
-      );
-    }
-
-    function DSectionHead({ children }) {
-      return <div style={{...mono,color:DC.muted,fontSize:9,letterSpacing:"0.2em",marginBottom:12,marginTop:24}}>{children}</div>;
-    }
-
-    function DBar({ label, val, max, color }) {
-      const pct = max>0?Math.min(100,(val/max)*100):0;
-      return (
-        <div style={{marginBottom:8}}>
-          <div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}>
-            <span style={{...mono,color:DC.muted,fontSize:10}}>{label}</span>
-            <span style={{...mono,color:DC.text,fontSize:10,fontWeight:700}}>{val}</span>
-          </div>
-          <div style={{background:DC.surface,borderRadius:2,height:4,width:"100%"}}>
-            <div style={{background:color||DC.blue,borderRadius:2,height:4,width:`${pct}%`,transition:"width .4s"}}/>
-          </div>
-        </div>
-      );
-    }
-
-    const DTooltip = ({ active, payload, label }) => {
-      if(!active||!payload?.length) return null;
-      return (
-        <div style={{...mono,background:DC.card,border:`1px solid ${DC.border2}`,borderRadius:6,padding:"8px 12px",fontSize:11}}>
-          <div style={{color:DC.muted,marginBottom:4}}>{label}</div>
-          {payload.map((p,i)=>(
-            <div key={i} style={{color:p.value>=0?DC.green:DC.red}}>
-              {p.name}: {p.value>=0?"+":""}{typeof p.value==="number"?p.value.toFixed(0):p.value}
+          <SectionHead>DAILY P&L</SectionHead>
+          {dailyBars.length>0&&(
+            <div className="dash-card" style={{padding:"16px 8px",marginBottom:20}}>
+              <ResponsiveContainer width="100%" height={140}>
+                <BarChart data={dailyBars}>
+                  <XAxis dataKey="date" tick={{fill:C.muted,fontSize:9,fontFamily:"monospace"}} axisLine={false} tickLine={false}/>
+                  <YAxis tick={{fill:C.muted,fontSize:9,fontFamily:"monospace"}} axisLine={false} tickLine={false}/>
+                  <ReferenceLine y={0} stroke={C.border2}/>
+                  <Tooltip content={<ChartTT/>}/>
+                  <Bar dataKey="pnl" name="P&L" radius={[2,2,0,0]}>
+                    {dailyBars.map((d,i)=><Cell key={i} fill={d.pnl>=0?C.green:C.red}/>)}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
             </div>
-          ))}
-        </div>
-      );
-    };
+          )}
 
-    // ── Grand Slams
-    function GrandSlams({ stats }) {
-      const slams = [
-        {label:"Trades Reviewed",        val:stats.totalTrades,           targets:[100,500,1000]},
-        {label:"Sessions Logged",         val:stats.totalSessions,         targets:[30,100,250]},
-        {label:"Consecutive Logged",      val:stats.currentStreak,         targets:[5,10,20,50]},
-        {label:"Chop Avoided",            val:stats.totalAvoided,          targets:[20,50,100]},
-        {label:"Correct Env Calls",       val:stats.correctEnvCalls,       targets:[10,30,75]},
-        {label:"A-Grade Trades",          val:stats.aGrades,               targets:[25,100,250]},
-        {label:"F-Grade Free Streak",     val:stats.freeStreak,            targets:[10,25,50]},
-        {label:"Non-Expansion Sessions",  val:stats.nonExpansionSessions,  targets:[10,30,60]},
-      ];
-      return (
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-          {slams.map(s=>{
-            const next=s.targets.find(t=>t>s.val)||s.targets[s.targets.length-1];
-            const prev=s.targets[s.targets.indexOf(next)-1]||0;
-            const pct=next>prev?Math.min(100,((s.val-prev)/(next-prev))*100):100;
-            const done=s.val>=next;
-            return (
-              <div key={s.label} style={{background:DC.card,border:`1px solid ${done?DC.green:DC.border2}`,borderRadius:8,padding:"12px 14px"}}>
-                <div style={{...mono,color:done?DC.greenText:DC.muted,fontSize:9,letterSpacing:"0.1em",marginBottom:4}}>{s.label}</div>
-                <div style={{display:"flex",alignItems:"baseline",gap:6,marginBottom:8}}>
-                  <span style={{...mono,color:done?DC.green:DC.text,fontSize:18,fontWeight:700}}>{s.val}</span>
-                  <span style={{...mono,color:DC.faint,fontSize:10}}>/ {next}</span>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:20}}>
+            <div className="dash-card" style={{padding:16}}>
+              <SectionHead mt={0}>TRADE GRADES</SectionHead>
+              {[["A",C.green],["B",C.blue],["C",C.yellow],["F",C.red]].map(([g,c])=>(
+                <Bar2 key={g} label={g} val={grades[g]} max={Math.max(...Object.values(grades),1)} color={c}/>
+              ))}
+            </div>
+            <div className="dash-card" style={{padding:16}}>
+              <SectionHead mt={0}>P&L BY ENVIRONMENT</SectionHead>
+              {Object.entries(envPnL).sort((a,b)=>b[1].pnl-a[1].pnl).map(([env,{pnl,count}])=>(
+                <div key={env} style={{display:"flex",justifyContent:"space-between",marginBottom:8}}>
+                  <span style={{...mono,color:C.muted,fontSize:10}}>{env}</span>
+                  <div>
+                    <span style={{...mono,color:pnl>=0?C.green:C.red,fontSize:11,fontWeight:700}}>{pnl>=0?"+":""}{pnl.toFixed(0)}</span>
+                    <span style={{...mono,color:C.faint,fontSize:9,marginLeft:6}}>({count})</span>
+                  </div>
                 </div>
-                <div style={{background:DC.surface,borderRadius:2,height:3}}>
-                  <div style={{background:done?DC.green:DC.blue,height:3,borderRadius:2,width:`${pct}%`,transition:"width .5s"}}/>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      );
-    }
-
-    // ── Frequency Table (MAE/MFE/Contracts)
-    function FrequencyTable({ title, data, color, bucketFn }) {
-      if(!data||data.length===0) return null;
-      const buckets = {};
-      data.forEach(v=>{
-        const key = bucketFn?bucketFn(v):String(v);
-        buckets[key]=(buckets[key]||0)+1;
-      });
-      const entries = Object.entries(buckets).sort((a,b)=>parseFloat(a[0])-parseFloat(b[0]));
-      const maxVal = Math.max(...entries.map(e=>e[1]));
-      return (
-        <div style={{background:DC.card,border:`1px solid ${DC.border2}`,borderRadius:8,padding:16,marginBottom:16}}>
-          <div style={{...mono,color:DC.muted,fontSize:9,letterSpacing:"0.15em",marginBottom:12}}>{title}</div>
-          {entries.map(([key,cnt])=>(
-            <div key={key} style={{marginBottom:6}}>
-              <div style={{display:"flex",justifyContent:"space-between",marginBottom:2}}>
-                <span style={{...mono,color:DC.muted,fontSize:10}}>{key} pts</span>
-                <span style={{...mono,color:DC.text,fontSize:10,fontWeight:700}}>{cnt}x</span>
-              </div>
-              <div style={{background:DC.surface,borderRadius:2,height:6}}>
-                <div style={{background:color||DC.blue,borderRadius:2,height:6,width:`${(cnt/maxVal)*100}%`,transition:"width .4s"}}/>
-              </div>
-            </div>
-          ))}
-        </div>
-      );
-    }
-
-    // ── Contracts frequency table split by W/L
-    function ContractsTable({ winners, losers }) {
-      const buildBuckets = (trades) => {
-        const b = {};
-        trades.forEach(t=>{
-          const c=t.contracts&&!isNaN(parseInt(t.contracts))?parseInt(t.contracts):null;
-          if(c===null) return;
-          if(!b[c]) b[c]={count:0,pnl:0};
-          b[c].count++;
-          b[c].pnl+=parseFloat(t.result)||0;
-        });
-        return b;
-      };
-      const wB=buildBuckets(winners);
-      const lB=buildBuckets(losers);
-      const allKeys=[...new Set([...Object.keys(wB),...Object.keys(lB)])].sort((a,b)=>parseInt(a)-parseInt(b));
-      if(allKeys.length===0) return null;
-      return (
-        <div style={{background:DC.card,border:`1px solid ${DC.border2}`,borderRadius:8,padding:16,marginBottom:16}}>
-          <div style={{...mono,color:DC.muted,fontSize:9,letterSpacing:"0.15em",marginBottom:12}}>CONTRACTS — WIN / LOSS BREAKDOWN</div>
-          <table style={{...mono,width:"100%",borderCollapse:"collapse",fontSize:10}}>
-            <thead>
-              <tr style={{borderBottom:`1px solid ${DC.border2}`}}>
-                {["Contracts","W Count","W P&L","L Count","L P&L","Net"].map(h=>(
-                  <th key={h} style={{color:DC.muted,padding:"6px 8px",textAlign:"left",fontWeight:400,fontSize:9,letterSpacing:"0.1em"}}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {allKeys.map(k=>{
-                const w=wB[k]||{count:0,pnl:0};
-                const l=lB[k]||{count:0,pnl:0};
-                const net=w.pnl+l.pnl;
-                return (
-                  <tr key={k} style={{borderBottom:`1px solid ${DC.border}`}}>
-                    <td style={{padding:"6px 8px",color:DC.text,fontWeight:700}}>{k}</td>
-                    <td style={{padding:"6px 8px",color:DC.green}}>{w.count}</td>
-                    <td style={{padding:"6px 8px",color:DC.green}}>{w.pnl>=0?"+":""}{w.pnl.toFixed(0)}</td>
-                    <td style={{padding:"6px 8px",color:DC.red}}>{l.count}</td>
-                    <td style={{padding:"6px 8px",color:DC.red}}>{l.pnl.toFixed(0)}</td>
-                    <td style={{padding:"6px 8px",color:net>=0?DC.green:DC.red,fontWeight:700}}>{net>=0?"+":""}{net.toFixed(0)}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      );
-    }
-
-    // ═══════════════════════════════════════════════════════════════
-    // DASHBOARD MAIN
-    // ═══════════════════════════════════════════════════════════════
-    function Dashboard({ sessions, onBack }) {
-      const [view, setView] = useState("overview");
-      const RC = window.Recharts;
-
-      const allTrades = sessions.flatMap(s=>(s.trades||[]).map(t=>({...t,sessionDate:s.date,env:s.environment})));
-      const withRes   = allTrades.filter(t=>t.result!==""&&!isNaN(parseFloat(t.result)));
-      const winners   = withRes.filter(t=>parseFloat(t.result)>=0);
-      const losers    = withRes.filter(t=>parseFloat(t.result)<0);
-      const totalPnL  = withRes.reduce((s,t)=>s+parseFloat(t.result),0);
-      const winRate   = withRes.length>0?(winners.length/withRes.length*100).toFixed(1):"—";
-      const avgWin    = winners.length>0?(winners.reduce((s,t)=>s+parseFloat(t.result),0)/winners.length).toFixed(0):0;
-      const avgLoss   = losers.length>0 ?(losers.reduce((s,t)=>s+parseFloat(t.result),0)/losers.length).toFixed(0):0;
-
-      const maeAvg = (arr) => {
-        const f=arr.filter(t=>t.mae!==""&&!isNaN(parseFloat(t.mae)));
-        return f.length>0?(f.reduce((s,t)=>s+parseFloat(t.mae),0)/f.length).toFixed(1):"—";
-      };
-      const mfeAvg = (arr) => {
-        const f=arr.filter(t=>t.mfe!==""&&!isNaN(parseFloat(t.mfe)));
-        return f.length>0?(f.reduce((s,t)=>s+parseFloat(t.mfe),0)/f.length).toFixed(1):"—";
-      };
-
-      const winMAE = maeAvg(winners), lossMAE = maeAvg(losers);
-      const winMFE = mfeAvg(winners), lossMFE = mfeAvg(losers);
-
-      // MAE/MFE values for frequency tables
-      const winMAEVals  = winners.filter(t=>t.mae!==""&&!isNaN(parseFloat(t.mae))).map(t=>Math.round(parseFloat(t.mae)));
-      const lossMAEVals = losers.filter(t=>t.mae!==""&&!isNaN(parseFloat(t.mae))).map(t=>Math.round(parseFloat(t.mae)));
-      const winMFEVals  = winners.filter(t=>t.mfe!==""&&!isNaN(parseFloat(t.mfe))).map(t=>Math.round(parseFloat(t.mfe)));
-      const lossMFEVals = losers.filter(t=>t.mfe!==""&&!isNaN(parseFloat(t.mfe))).map(t=>Math.round(parseFloat(t.mfe)));
-
-      // Cumulative PnL curve
-      const pnlCurve = withRes.map((t,i)=>({i:i+1,pnl:withRes.slice(0,i+1).reduce((s,x)=>s+parseFloat(x.result),0),date:t.sessionDate}));
-
-      // Daily PnL bar
-      const byDate={};
-      withRes.forEach(t=>{byDate[t.sessionDate]=(byDate[t.sessionDate]||0)+parseFloat(t.result);});
-      const dailyBars=Object.entries(byDate).sort().map(([date,pnl])=>({date:date.slice(5),pnl}));
-
-      // Loss breakdown
-      const lossTags={};
-      losers.forEach(t=>{if(t.lossTag)lossTags[t.lossTag]=(lossTags[t.lossTag]||0)+1;});
-      const topLoss=Object.entries(lossTags).sort((a,b)=>b[1]-a[1]);
-
-      // Setup win rate
-      const setupWR={};
-      withRes.forEach(t=>{
-        if(!t.setupTag)return;
-        if(!setupWR[t.setupTag])setupWR[t.setupTag]={w:0,l:0};
-        parseFloat(t.result)>=0?setupWR[t.setupTag].w++:setupWR[t.setupTag].l++;
-      });
-
-      // Grades
-      const grades={A:0,B:0,C:0,F:0};
-      allTrades.forEach(t=>{if(t.grade)grades[t.grade]++;});
-
-      // IFT + Negotiable
-      const iftYes=allTrades.filter(t=>t.immediateFollowThrough===true).length;
-      const iftNo =allTrades.filter(t=>t.immediateFollowThrough===false).length;
-      const negYes=allTrades.filter(t=>t.negotiable===true).length;
-      const negNo =allTrades.filter(t=>t.negotiable===false).length;
-
-      // Env profitability
-      const envPnL={};
-      sessions.forEach(s=>{
-        if(!s.environment)return;
-        const spnl=(s.trades||[]).filter(t=>t.result!==""&&!isNaN(parseFloat(t.result))).reduce((x,t)=>x+parseFloat(t.result),0);
-        if(!envPnL[s.environment])envPnL[s.environment]={pnl:0,count:0};
-        envPnL[s.environment].pnl+=spnl;
-        envPnL[s.environment].count++;
-      });
-
-      // Avoided + env calls
-      const totalAvoided=sessions.reduce((s,x)=>(x.avoided||[]).filter(a=>a.passed===true).length+s,0);
-      const correctEnvCalls=sessions.filter(s=>s.environmentCorrect===true).length;
-
-      // F-free streak
-      let freeStreak=0;
-      for(let i=allTrades.length-1;i>=0;i--){
-        if(allTrades[i].grade==="F")break;
-        if(allTrades[i].grade)freeStreak++;
-      }
-
-      const nonExpansionSessions=sessions.filter(s=>s.environment&&s.environment!=="EXPANSION"&&s.environment!=="CHOP").length;
-      const gStats={totalTrades:allTrades.length,totalSessions:sessions.length,currentStreak:sessions.length,totalAvoided,correctEnvCalls,aGrades:grades.A,freeStreak,nonExpansionSessions};
-
-      const TAB=(id,label)=>(
-        <button onClick={()=>setView(id)} style={{...mono,background:"none",border:"none",borderBottom:`2px solid ${view===id?DC.blue:"transparent"}`,color:view===id?DC.blueText:DC.muted,padding:"8px 16px",fontSize:11,cursor:"pointer",transition:"all .15s",boxShadow:"none"}}>{label}</button>
-      );
-
-      return (
-        <div id="dashboard-section" style={{...mono,background:DC.bg,minHeight:"100vh",color:DC.text}}>
-          {/* Header */}
-          <div style={{borderBottom:`1px solid ${DC.border}`,padding:"14px 20px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-            <div>
-              <div style={{color:DC.muted,fontSize:9,letterSpacing:"0.2em",marginBottom:2}}>KAIZEN TRADE AUTOPSY</div>
-              <div style={{color:DC.text,fontSize:16,fontWeight:700,letterSpacing:"0.05em"}}>PERFORMANCE DASHBOARD</div>
-            </div>
-            <div style={{display:"flex",gap:12,alignItems:"center"}}>
-              <span style={{color:totalPnL>=0?DC.green:DC.red,fontSize:18,fontWeight:700}}>{totalPnL>=0?"+":""}{totalPnL.toFixed(0)}</span>
-              <span style={{color:DC.muted,fontSize:10}}>total</span>
-              <button onClick={onBack} style={{...mono,background:DC.card,border:`1px solid ${DC.border2}`,color:DC.muted,padding:"6px 14px",borderRadius:6,fontSize:11,cursor:"pointer",boxShadow:"none"}}>← SESSION LOG</button>
+              ))}
             </div>
           </div>
 
-          {/* Tabs */}
-          <div style={{borderBottom:`1px solid ${DC.border}`,padding:"0 20px",display:"flex"}}>
-            {TAB("overview","OVERVIEW")}
-            {TAB("slams","GRAND SLAMS")}
-            {TAB("excursions","MAE / MFE")}
-            {TAB("trades","TRADE BREAKDOWN")}
-            {TAB("sessions","SESSION LOG")}
-          </div>
+          {topLoss.length>0&&<>
+            <SectionHead>LOSS BREAKDOWN — YOUR ENEMY</SectionHead>
+            <div className="dash-card" style={{padding:16,marginBottom:20}}>
+              {topLoss.map(([tag,count])=><Bar2 key={tag} label={tag} val={count} max={topLoss[0][1]} color={C.red}/>)}
+            </div>
+          </>}
 
-          <div style={{maxWidth:920,margin:"0 auto",padding:"20px 16px"}}>
+          {Object.keys(setupsMap).length>0&&<>
+            <SectionHead>LOGGED SETUP TAG VOLUMES</SectionHead>
+            <div className="dash-card" style={{padding:16,marginBottom:20}}>
+              {Object.entries(setupsMap).sort((a,b)=>b[1]-a[1]).map(([label,val])=>(
+                <Bar2 key={label} label={label} val={val} max={maxSetupVol} color={C.purple}/>
+              ))}
+            </div>
+          </>}
 
-            {/* ── OVERVIEW ── */}
-            {view==="overview"&&<>
-              <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginBottom:20}}>
-                <DStat label="NET P&L ($)" value={`${totalPnL>=0?"+":""}${totalPnL.toFixed(0)}`} color={totalPnL>=0?DC.green:DC.red} sub={`${sessions.length} sessions`}/>
-                <DStat label="WIN RATE" value={`${winRate}%`} sub={`${winners.length}W / ${losers.length}L`} color={parseFloat(winRate)>=55?DC.green:parseFloat(winRate)>=45?DC.yellow:DC.red}/>
-                <DStat label="AVG WIN / LOSS" value={`+${avgWin}`} sub={`avg loss ${avgLoss}`} color={DC.green}/>
-                <DStat label="TRADES REVIEWED" value={allTrades.length} sub={`${totalAvoided} avoided`} color={DC.blue}/>
-              </div>
-              <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginBottom:24}}>
-                <DStat label="WIN AVG MAE (pts)" value={winMAE} color={DC.green} sub="winners avg adverse excursion"/>
-                <DStat label="LOSS AVG MAE (pts)" value={lossMAE} color={DC.red} sub="losers avg adverse excursion"/>
-                <DStat label="WIN AVG MFE (pts)" value={winMFE} color={DC.green} sub="winners avg favorable excursion"/>
-                <DStat label="LOSS AVG MFE (pts)" value={lossMFE} color={DC.yellow} sub="losers avg favorable excursion"/>
-              </div>
-              <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginBottom:24}}>
-                <DStat label="IFT YES / NO" value={`${iftYes} / ${iftNo}`} sub="immediate follow-through"/>
-                <DStat label="NEGOTIABLE Y / N" value={`${negYes} / ${negNo}`} sub="market gave time"/>
-                <DStat label="ENV CORRECT" value={correctEnvCalls} sub="correct env reads"/>
-                <DStat label="AVOIDED" value={totalAvoided} sub="correctly passed"/>
-              </div>
-
-              {/* Equity curve */}
-              {RC&&pnlCurve.length>0&&<>
-                <DSectionHead>CUMULATIVE P&L</DSectionHead>
-                <div style={{background:DC.card,border:`1px solid ${DC.border2}`,borderRadius:8,padding:"16px 8px",marginBottom:20}}>
-                  <RC.ResponsiveContainer width="100%" height={180}>
-                    <RC.LineChart data={pnlCurve}>
-                      <RC.XAxis dataKey="i" tick={{fill:DC.muted,fontSize:9,fontFamily:"monospace"}} axisLine={false} tickLine={false}/>
-                      <RC.YAxis tick={{fill:DC.muted,fontSize:9,fontFamily:"monospace"}} axisLine={false} tickLine={false}/>
-                      <RC.ReferenceLine y={0} stroke={DC.border2} strokeDasharray="3 3"/>
-                      <RC.Tooltip content={<DTooltip/>}/>
-                      <RC.Line type="monotone" dataKey="pnl" name="Cumulative" stroke={DC.blue} strokeWidth={2} dot={false}/>
-                    </RC.LineChart>
-                  </RC.ResponsiveContainer>
-                </div>
-              </>}
-
-              {/* Daily bars */}
-              {RC&&dailyBars.length>0&&<>
-                <DSectionHead>DAILY P&L</DSectionHead>
-                <div style={{background:DC.card,border:`1px solid ${DC.border2}`,borderRadius:8,padding:"16px 8px",marginBottom:20}}>
-                  <RC.ResponsiveContainer width="100%" height={140}>
-                    <RC.BarChart data={dailyBars}>
-                      <RC.XAxis dataKey="date" tick={{fill:DC.muted,fontSize:9,fontFamily:"monospace"}} axisLine={false} tickLine={false}/>
-                      <RC.YAxis tick={{fill:DC.muted,fontSize:9,fontFamily:"monospace"}} axisLine={false} tickLine={false}/>
-                      <RC.ReferenceLine y={0} stroke={DC.border2}/>
-                      <RC.Tooltip content={<DTooltip/>}/>
-                      <RC.Bar dataKey="pnl" name="P&L" radius={[2,2,0,0]}>
-                        {dailyBars.map((d,i)=><RC.Cell key={i} fill={d.pnl>=0?DC.green:DC.red}/>)}
-                      </RC.Bar>
-                    </RC.BarChart>
-                  </RC.ResponsiveContainer>
-                </div>
-              </>}
-
-              {/* Grade + Env */}
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:20}}>
-                <div style={{background:DC.card,border:`1px solid ${DC.border2}`,borderRadius:8,padding:16}}>
-                  <DSectionHead>TRADE GRADES</DSectionHead>
-                  {[["A",DC.green],["B",DC.blue],["C",DC.yellow],["F",DC.red]].map(([g,c])=>(
-                    <DBar key={g} label={g} val={grades[g]} max={Math.max(...Object.values(grades),1)} color={c}/>
-                  ))}
-                </div>
-                <div style={{background:DC.card,border:`1px solid ${DC.border2}`,borderRadius:8,padding:16}}>
-                  <DSectionHead>P&L BY ENVIRONMENT</DSectionHead>
-                  {Object.entries(envPnL).sort((a,b)=>b[1].pnl-a[1].pnl).map(([env,{pnl,count}])=>(
-                    <div key={env} style={{display:"flex",justifyContent:"space-between",marginBottom:8}}>
-                      <span style={{color:DC.muted,fontSize:10}}>{env}</span>
-                      <div style={{textAlign:"right"}}>
-                        <span style={{color:pnl>=0?DC.green:DC.red,fontSize:11,fontWeight:700}}>{pnl>=0?"+":""}{pnl.toFixed(0)}</span>
-                        <span style={{color:DC.faint,fontSize:9,marginLeft:6}}>({count} sessions)</span>
-                      </div>
+          {Object.keys(setupWR).length>0&&<>
+            <SectionHead>WIN RATE BY SETUP</SectionHead>
+            <div className="dash-card" style={{padding:16}}>
+              {Object.entries(setupWR).map(([tag,{w,l}])=>{
+                const wr=(w/(w+l)*100).toFixed(0);
+                return(
+                  <div key={tag} style={{display:"flex",justifyContent:"space-between",marginBottom:8}}>
+                    <span style={{...mono,color:C.muted,fontSize:10}}>{tag}</span>
+                    <div>
+                      <span style={{...mono,color:parseInt(wr)>=55?C.green:parseInt(wr)>=45?C.yellow:C.red,fontSize:11,fontWeight:700}}>{wr}%</span>
+                      <span style={{...mono,color:C.faint,fontSize:9,marginLeft:6}}>{w}W {l}L</span>
                     </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Loss breakdown */}
-              {topLoss.length>0&&<>
-                <DSectionHead>LOSS BREAKDOWN — YOUR ENEMY</DSectionHead>
-                <div style={{background:DC.card,border:`1px solid ${DC.border2}`,borderRadius:8,padding:16,marginBottom:20}}>
-                  {topLoss.map(([tag,count])=><DBar key={tag} label={tag} val={count} max={topLoss[0][1]} color={DC.red}/>)}
-                </div>
-              </>}
-
-              {/* Setup win rate */}
-              {Object.keys(setupWR).length>0&&<>
-                <DSectionHead>WIN RATE BY SETUP</DSectionHead>
-                <div style={{background:DC.card,border:`1px solid ${DC.border2}`,borderRadius:8,padding:16}}>
-                  {Object.entries(setupWR).map(([tag,{w,l}])=>{
-                    const wr=(w/(w+l)*100).toFixed(0);
-                    return (
-                      <div key={tag} style={{display:"flex",justifyContent:"space-between",marginBottom:8}}>
-                        <span style={{color:DC.muted,fontSize:10}}>{tag}</span>
-                        <div>
-                          <span style={{color:parseInt(wr)>=55?DC.green:parseInt(wr)>=45?DC.yellow:DC.red,fontSize:11,fontWeight:700}}>{wr}%</span>
-                          <span style={{color:DC.faint,fontSize:9,marginLeft:6}}>{w}W {l}L</span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </>}
-            </>}
-
-            {/* ── GRAND SLAMS ── */}
-            {view==="slams"&&<>
-              <div style={{borderLeft:`2px solid ${DC.faint}`,paddingLeft:14,marginBottom:20}}>
-                <div style={{color:DC.faint,fontSize:11,fontStyle:"italic",lineHeight:1.9}}>
-                  You do not become dominant because you string together 100 green days.<br/>
-                  You become dominant because you become so difficult to knock off course<br/>
-                  that 100 green days eventually emerge from the process.
-                </div>
-              </div>
-              <GrandSlams stats={gStats}/>
-            </>}
-
-            {/* ── MAE / MFE EXCURSIONS ── */}
-            {view==="excursions"&&<>
-              <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginBottom:20}}>
-                <DStat label="WIN AVG MAE" value={winMAE} color={DC.green} sub="pts"/>
-                <DStat label="LOSS AVG MAE" value={lossMAE} color={DC.red} sub="pts"/>
-                <DStat label="WIN AVG MFE" value={winMFE} color={DC.green} sub="pts"/>
-                <DStat label="LOSS AVG MFE" value={lossMFE} color={DC.yellow} sub="pts"/>
-              </div>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
-                <FrequencyTable title="WINNING TRADES — MAE FREQUENCY" data={winMAEVals}  color={DC.green}/>
-                <FrequencyTable title="LOSING TRADES — MAE FREQUENCY"  data={lossMAEVals} color={DC.red}/>
-                <FrequencyTable title="WINNING TRADES — MFE FREQUENCY" data={winMFEVals}  color={DC.green}/>
-                <FrequencyTable title="LOSING TRADES — MFE FREQUENCY"  data={lossMFEVals} color={DC.yellow}/>
-              </div>
-              <DSectionHead>CONTRACTS — WIN / LOSS BREAKDOWN</DSectionHead>
-              <ContractsTable winners={winners} losers={losers}/>
-            </>}
-
-            {/* ── TRADE BREAKDOWN ── */}
-            {view==="trades"&&<>
-              <div style={{overflowX:"auto"}}>
-                <table style={{...mono,width:"100%",borderCollapse:"collapse",fontSize:10}}>
-                  <thead>
-                    <tr style={{borderBottom:`1px solid ${DC.border2}`}}>
-                      {["Date","Dir","Result","MAE","MFE","Cts","Grade","IFT","Neg","Setup","Loss Tag","Why"].map(h=>(
-                        <th key={h} style={{color:DC.muted,padding:"8px 10px",textAlign:"left",fontWeight:400,fontSize:9,letterSpacing:"0.1em"}}>{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {allTrades.map((t,i)=>{
-                      const res=parseFloat(t.result);
-                      return (
-                        <tr key={i} style={{borderBottom:`1px solid ${DC.border}`}}>
-                          <td style={{padding:"7px 10px",color:DC.muted}}>{t.sessionDate}</td>
-                          <td style={{padding:"7px 10px",color:t.direction==="LONG"?DC.green:t.direction==="SHORT"?DC.red:DC.muted}}>{t.direction||"—"}</td>
-                          <td style={{padding:"7px 10px",color:isNaN(res)?DC.muted:res>=0?DC.green:DC.red,fontWeight:700}}>{isNaN(res)?t.result:`${res>=0?"+":""}${res}`}</td>
-                          <td style={{padding:"7px 10px",color:DC.yellow}}>{t.mae||"—"}</td>
-                          <td style={{padding:"7px 10px",color:DC.muted}}>{t.mfe||"—"}</td>
-                          <td style={{padding:"7px 10px",color:DC.blue}}>{t.contracts||"—"}</td>
-                          <td style={{padding:"7px 10px",color:t.grade==="A"?DC.green:t.grade==="B"?DC.blue:t.grade==="C"?DC.yellow:t.grade==="F"?DC.red:DC.muted,fontWeight:700}}>{t.grade||"—"}</td>
-                          <td style={{padding:"7px 10px",color:t.immediateFollowThrough===true?DC.green:t.immediateFollowThrough===false?DC.red:DC.faint}}>{t.immediateFollowThrough===true?"Y":t.immediateFollowThrough===false?"N":"—"}</td>
-                          <td style={{padding:"7px 10px",color:t.negotiable===true?DC.green:t.negotiable===false?DC.red:DC.faint}}>{t.negotiable===true?"Y":t.negotiable===false?"N":"—"}</td>
-                          <td style={{padding:"7px 10px",color:DC.muted}}>{t.setupTag||"—"}</td>
-                          <td style={{padding:"7px 10px",color:DC.red}}>{t.lossTag||"—"}</td>
-                          <td style={{padding:"7px 10px",color:DC.muted,maxWidth:180,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.why||"—"}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </>}
-
-            {/* ── SESSION LOG ── */}
-            {view==="sessions"&&<>
-              {[...sessions].reverse().map(s=>{
-                const st=s.trades||[];
-                const wr=st.filter(t=>!isNaN(parseFloat(t.result)));
-                const spnl=wr.reduce((x,t)=>x+parseFloat(t.result),0);
-                const wins=wr.filter(t=>parseFloat(t.result)>=0).length;
-                return (
-                  <div key={s.id} style={{background:DC.card,border:`1px solid ${DC.border2}`,borderRadius:8,padding:"14px 16px",marginBottom:10}}>
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-                      <div>
-                        <span style={{color:DC.text,fontSize:13,fontWeight:700}}>{s.date}</span>
-                        <span style={{color:DC.muted,fontSize:10,marginLeft:10}}>{s.environment||"—"}</span>
-                      </div>
-                      <div style={{display:"flex",gap:16,alignItems:"center"}}>
-                        <span style={{color:spnl>=0?DC.green:DC.red,fontSize:13,fontWeight:700}}>{spnl>=0?"+":""}{spnl.toFixed(0)}</span>
-                        <span style={{color:DC.muted,fontSize:10}}>{wins}W/{wr.length-wins}L</span>
-                      </div>
-                    </div>
-                    {s.sessionNotes&&<div style={{color:DC.muted,fontSize:10,fontStyle:"italic"}}>{s.sessionNotes}</div>}
                   </div>
                 );
               })}
-            </>}
+            </div>
+          </>}
 
+          <SectionHead>SESSION ACTIVITY VOLUMES</SectionHead>
+          <div className="dash-card" style={{padding:"16px 8px",marginBottom:20}}>
+            <ResponsiveContainer width="100%" height={160}>
+              <BarChart data={chartData}>
+                <XAxis dataKey="name" tick={{fill:C.muted,fontSize:9,fontFamily:"monospace"}} axisLine={false} tickLine={false}/>
+                <YAxis tick={{fill:C.muted,fontSize:9,fontFamily:"monospace"}} axisLine={false} tickLine={false}/>
+                <Tooltip content={<ChartTT/>}/>
+                <Bar dataKey="Trades" fill={C.green} radius={[2,2,0,0]}>
+                  {chartData.map((entry,i)=><Cell key={i} fill={entry["Net P&L"]>=0?C.green:C.red}/>)}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </>}
+
+        {/* ── GRAND SLAMS ── */}
+        {dashView==="slams"&&<>
+          <div style={{borderLeft:`2px solid ${C.faint}`,paddingLeft:14,marginBottom:20}}>
+            <div style={{...mono,color:C.faint,fontSize:11,fontStyle:"italic",lineHeight:1.9}}>
+              You do not become dominant because you string together 100 green days.<br/>
+              You become dominant because you become so difficult to knock off course<br/>
+              that 100 green days eventually emerge from the process.
+            </div>
+          </div>
+          <GrandSlams stats={gStats}/>
+        </>}
+
+        {/* ── MAE / MFE ── */}
+        {dashView==="maemfe"&&<>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginBottom:20}}>
+            <Stat label="AVG MAE WINNERS" value={winMAE_avg}  color={C.green} sub="pts adverse excursion"/>
+            <Stat label="AVG MAE LOSERS"  value={lossMAE_avg} color={C.red}   sub="pts adverse excursion"/>
+            <Stat label="AVG MFE WINNERS" value={winMFE_avg}  color={C.green} sub="pts max favorable"/>
+            <Stat label="AVG MFE LOSERS"  value={lossMFE_avg} color={C.red}   sub="pts max favorable"/>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
+            <FreqTable title="MAE — WINNING TRADES" data={maeWinData} color={C.green}/>
+            <FreqTable title="MAE — LOSING TRADES"  data={maeLossData} color={C.red}/>
+            <FreqTable title="MFE — WINNING TRADES" data={mfeWinData} color={C.green}/>
+            <FreqTable title="MFE — LOSING TRADES"  data={mfeLossData} color={C.red}/>
+          </div>
+        </>}
+
+        {/* ── CONTRACTS ── */}
+        {dashView==="contracts"&&<>
+          <ContractTable title="CONTRACT SIZE — ALL TRADES"     trades={withRes}/>
+          <ContractTable title="CONTRACT SIZE — WINNING TRADES" trades={winners}/>
+          <ContractTable title="CONTRACT SIZE — LOSING TRADES"  trades={losers}/>
+        </>}
+
+        {/* ── WINNING TRADES ── */}
+        {dashView==="winners"&&<>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:20}}>
+            <Stat label="TOTAL WINNERS" value={winners.length} color={C.green}/>
+            <Stat label="AVG WIN ($)"   value={`+${avgWin}`}   color={C.green}/>
+            <Stat label="AVG MFE (W)"   value={winMFE_avg}     color={C.green} sub="max favorable excursion"/>
+          </div>
+          <WinLossTable title="WINNING TRADES" trades={winners} color={C.green}/>
+        </>}
+
+        {/* ── LOSING TRADES ── */}
+        {dashView==="losers"&&<>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:20}}>
+            <Stat label="TOTAL LOSERS" value={losers.length} color={C.red}/>
+            <Stat label="AVG LOSS ($)" value={avgLoss}       color={C.red}/>
+            <Stat label="AVG MFE (L)"  value={lossMFE_avg}   color={C.red} sub="max favorable excursion"/>
+          </div>
+          <WinLossTable title="LOSING TRADES" trades={losers} color={C.red}/>
+        </>}
+
+        {/* ── ALL TRADES ── */}
+        {dashView==="alltrades"&&<>
+          <div className="tbl-wrap">
+            <table style={{...mono,width:"100%",borderCollapse:"collapse",fontSize:10}}>
+              <thead>
+                <tr style={{borderBottom:`1px solid ${C.border2}`}}>
+                  {["Date","Dir","Contracts","Result","MAE","MFE","Grade","IFT","Neg","Setup","Loss Tag","Why"].map(h=>(
+                    <th key={h} style={{color:C.muted,padding:"8px 10px",textAlign:"left",fontWeight:400,fontSize:9,letterSpacing:"0.1em"}}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {allTrades.map((t,i)=>{
+                  const res=parseFloat(t.result);
+                  return(
+                    <tr key={i} style={{borderBottom:`1px solid ${C.border}`}}>
+                      <td style={{padding:"7px 10px",color:C.muted}}>{t.sessionDate}</td>
+                      <td style={{padding:"7px 10px",color:t.direction==="LONG"?C.green:t.direction==="SHORT"?C.red:C.muted}}>{t.direction||"—"}</td>
+                      <td style={{padding:"7px 10px",color:C.muted}}>{t.contracts||"—"}</td>
+                      <td style={{padding:"7px 10px",color:isNaN(res)?C.muted:res>=0?C.green:C.red,fontWeight:700}}>{isNaN(res)?t.result:`${res>=0?"+":""}${res}`}</td>
+                      <td style={{padding:"7px 10px",color:C.yellow}}>{t.mae||"—"}</td>
+                      <td style={{padding:"7px 10px",color:C.blue}}>{t.mfe||"—"}</td>
+                      <td style={{padding:"7px 10px",color:t.grade==="A"?C.green:t.grade==="B"?C.blue:t.grade==="C"?C.yellow:t.grade==="F"?C.red:C.muted,fontWeight:700}}>{t.grade||"—"}</td>
+                      <td style={{padding:"7px 10px",color:t.immediateFollowThrough===true?C.green:t.immediateFollowThrough===false?C.red:C.faint}}>{t.immediateFollowThrough===true?"Y":t.immediateFollowThrough===false?"N":"—"}</td>
+                      <td style={{padding:"7px 10px",color:t.negotiable===true?C.green:t.negotiable===false?C.red:C.faint}}>{t.negotiable===true?"Y":t.negotiable===false?"N":"—"}</td>
+                      <td style={{padding:"7px 10px",color:C.muted}}>{t.setupTag||"—"}</td>
+                      <td style={{padding:"7px 10px",color:C.red}}>{t.lossTag||"—"}</td>
+                      <td style={{padding:"7px 10px",color:C.muted,maxWidth:180,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.why||"—"}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </>}
+
+        {/* ── SESSION LOG ── */}
+        {dashView==="sessions"&&<>
+          {[...historicalSessions].reverse().map(s=>{
+            const st=s.trades||[];
+            const wr=st.filter(t=>!isNaN(parseFloat(t.result)));
+            const spnl=wr.reduce((x,t)=>x+parseFloat(t.result),0);
+            const wins=wr.filter(t=>parseFloat(t.result)>=0).length;
+            return(
+              <div key={s.id||s.date} className="dash-card" style={{padding:"14px 16px",marginBottom:10}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                  <div>
+                    <span style={{...mono,color:C.text,fontSize:13,fontWeight:700}}>{s.date}</span>
+                    <span style={{...mono,color:C.muted,fontSize:10,marginLeft:10}}>{s.environment||"—"}</span>
+                  </div>
+                  <div style={{display:"flex",gap:16,alignItems:"center"}}>
+                    <span style={{...mono,color:spnl>=0?C.green:C.red,fontSize:13,fontWeight:700}}>{spnl>=0?"+":""}{spnl.toFixed(0)}</span>
+                    <span style={{...mono,color:C.muted,fontSize:10}}>{wins}W/{wr.length-wins}L</span>
+                    <span style={{...mono,color:s.survived?C.green:C.faint,fontSize:10}}>{s.survived?"✓ SURVIVED":"—"}</span>
+                  </div>
+                </div>
+                {s.sessionNotes&&<div style={{...mono,color:C.muted,fontSize:10,fontStyle:"italic"}}>{s.sessionNotes}</div>}
+              </div>
+            );
+          })}
+        </>}
+
+      </div>
+    </div>
+  );
+}
+
+/* ─── Main App ─── */
+function KaizenTradeTemplate(){
+  const [session,setSession]=useState(emptySession());
+  const [avoided,setAvoided]=useState([]);
+  const [history,setHistory]=useState([]);
+  const [view,setView]=useState("session"); // "session" | "summary" | "dashboard"
+  const [saved,setSaved]=useState(false);
+
+  useEffect(()=>{
+    loadSavedSessions().then(data=>{
+      setHistory(data);
+    });
+  },[]);
+
+  const updateSession=(key,val)=>setSession(prev=>({...prev,[key]:val}));
+  const addTrade=()=>setSession(prev=>({...prev,trades:[...prev.trades,emptyTrade()]}));
+  const updateTrade=(id,upd)=>setSession(prev=>({...prev,trades:prev.trades.map(t=>t.id===id?upd:t)}));
+  const removeTrade=(id)=>setSession(prev=>({...prev,trades:prev.trades.filter(t=>t.id!==id)}));
+
+  const commitSessionToHistory=async()=>{
+    if(window.confirm("Commit current logs to analytics archive and reset workspace?")){
+      const updated=[...history,{...session,id:session.id||Date.now(),avoidedSetups:avoided}];
+      setHistory(updated);
+      await saveAllSessions(updated);
+      setSession(emptySession());
+      setAvoided([]);
+      setSaved(true);
+      setTimeout(()=>setSaved(false),3000);
+      setView("dashboard");
+    }
+  };
+  const resetSession=()=>{
+    if(window.confirm("Start a new session? Current un-archived data will be cleared.")){
+      setSession(emptySession());
+      setAvoided([]);
+      setView("session");
+    }
+  };
+
+  const hdrBtn={background:"none",border:"1px solid #3f3f46",color:"#a1a1aa",padding:"6px 14px",borderRadius:"4px",fontSize:"11px",cursor:"pointer"};
+  const envBtn=(active)=>({padding:"6px 14px",border:`1px solid ${active?"#6366f1":"#3f3f46"}`,borderRadius:"4px",background:active?"#1e1b4b":"#18181b",color:active?"#a5b4fc":"#71717a",fontSize:"11px",cursor:"pointer"});
+  const yesNoBtn=(active,isYes)=>({padding:"6px 16px",border:`1px solid ${active?(isYes?"#10b981":"#ef4444"):"#3f3f46"}`,borderRadius:"4px",background:active?(isYes?"#064e3b":"#450a0a"):"#18181b",color:active?(isYes?"#6ee7b7":"#fca5a5"):"#71717a",fontSize:"11px",cursor:"pointer"});
+  const envCorrectBtn=(v,active)=>({padding:"6px 14px",border:`1px solid ${active?(v===true?"#10b981":v===false?"#ef4444":"#eab308"):"#3f3f46"}`,borderRadius:"4px",background:active?(v===true?"#064e3b":v===false?"#450a0a":"#422006"):"#18181b",color:active?(v===true?"#6ee7b7":v===false?"#fca5a5":"#fde047"):"#71717a",fontSize:"11px",cursor:"pointer"});
+
+  return(
+    <div style={{background:"#0a0a0a",minHeight:"100vh",fontFamily:"'JetBrains Mono','Courier New',monospace"}}>
+
+      {/* ── Header ── */}
+      <div style={{borderBottom:"1px solid #27272a",padding:"16px 24px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+        <div>
+          <div style={{color:"#71717a",fontSize:"10px",letterSpacing:"0.2em",marginBottom:"2px"}}>KAIZEN TRADE AUTOPSY</div>
+          <div style={{color:"#e4e4e7",fontSize:"18px",fontWeight:"700",letterSpacing:"0.05em"}}>SESSION LOG</div>
+        </div>
+        <div style={{display:"flex",gap:"8px",flexWrap:"wrap",alignItems:"center"}}>
+          {saved&&<span style={{color:"#10b981",fontSize:10,fontFamily:"monospace"}}>✓ ARCHIVED</span>}
+          <button id="print-btn" onClick={()=>window.print()} style={{...hdrBtn,borderColor:"#6366f1",color:"#a5b4fc"}}>⬇ PRINT / SAVE PDF</button>
+          <button onClick={()=>setView("session")}   style={{...hdrBtn,borderColor:view==="session"?"#2563ff":"#3f3f46",color:view==="session"?"#fff":"#a1a1aa"}}>LOG WORKSPACE</button>
+          <button onClick={()=>setView("summary")}   style={{...hdrBtn,borderColor:view==="summary"?"#2563ff":"#3f3f46",color:view==="summary"?"#fff":"#a1a1aa"}}>VIEW SUMMARY</button>
+          <button onClick={()=>setView("dashboard")} style={{...hdrBtn,borderColor:view==="dashboard"?"#2563ff":"#3f3f46",color:view==="dashboard"?"#fff":"#a1a1aa"}}>ANALYTICS DASHBOARD</button>
+          <button onClick={commitSessionToHistory} style={{...hdrBtn,borderColor:"#10b981",color:"#6ee7b7"}}>ARCHIVE SESSION</button>
+          <button onClick={resetSession} style={{...hdrBtn,color:"#71717a"}}>NEW SESSION</button>
+        </div>
+      </div>
+
+      <div style={{maxWidth:"860px",margin:"0 auto",padding:"24px 16px"}}>
+
+        {/* ── Mantra ── */}
+        <div style={{borderLeft:"2px solid #3f3f46",paddingLeft:"16px",marginBottom:"28px"}}>
+          <div style={{color:"#52525b",fontSize:"11px",fontStyle:"italic",lineHeight:"1.8"}}>
+            I protect the account. I stack clean days. I become impossible to kill.<br/>
+            Has the market earned my participation?
           </div>
         </div>
-      );
-    }
 
-    // ═══════════════════════════════════════════════════════════════
-    // MAIN APP
-    // ═══════════════════════════════════════════════════════════════
-    function KaizenApp() {
-      const [session, setSession]       = useState(emptySession());
-      const [view, setView]             = useState("session"); // "session" | "summary" | "dashboard"
-      const [savedSessions, setSaved]   = useState([]);
-      const [saveStatus, setSaveStatus] = useState(null); // null | "saving" | "saved" | "error"
-      const [loadedSaved, setLoadedSaved] = useState(false);
-
-      // Load saved sessions on mount
-      useEffect(()=>{
-        loadSessions().then(s=>{ setSaved(s); setLoadedSaved(true); });
-      },[]);
-
-      const updateSession  = (key, val) => setSession(prev=>({...prev,[key]:val}));
-      const addTrade       = ()         => setSession(prev=>({...prev,trades:[...prev.trades,emptyTrade()]}));
-      const updateTrade    = (id, upd)  => setSession(prev=>({...prev,trades:prev.trades.map(t=>t.id===id?upd:t)}));
-      const removeTrade    = (id)       => setSession(prev=>({...prev,trades:prev.trades.filter(t=>t.id!==id)}));
-
-      const setAvoided = (fn) => {
-        setSession(prev=>({...prev,avoided:typeof fn==="function"?fn(prev.avoided||[]):fn}));
-      };
-
-      const handleSaveSession = async () => {
-        setSaveStatus("saving");
-        const updated = [...savedSessions.filter(s=>s.id!==session.id), {...session}];
-        const ok = await saveSessions(updated);
-        if(ok){ setSaved(updated); setSaveStatus("saved"); setTimeout(()=>setSaveStatus(null),2000); }
-        else  { setSaveStatus("error"); setTimeout(()=>setSaveStatus(null),3000); }
-      };
-
-      const resetSession = () => {
-        if(window.confirm("Start a new session? Unsaved data will be cleared. Save first if needed.")) {
-          setSession(emptySession()); setView("session");
-        }
-      };
-
-      const hdrBtn = {
-        background:"none",border:"1px solid #3f3f46",color:"#a1a1aa",
-        padding:"6px 14px",borderRadius:"4px",fontSize:"11px",cursor:"pointer",
-      };
-      const envBtn=(active)=>({
-        padding:"6px 14px",border:`1px solid ${active?"#6366f1":"#3f3f46"}`,borderRadius:"4px",
-        background:active?"#1e1b4b":"#18181b",color:active?"#a5b4fc":"#71717a",fontSize:"11px",cursor:"pointer",
-      });
-      const yesNoBtn=(active,isYes)=>({
-        padding:"6px 16px",border:`1px solid ${active?(isYes?"#10b981":"#ef4444"):"#3f3f46"}`,borderRadius:"4px",
-        background:active?(isYes?"#064e3b":"#450a0a"):"#18181b",color:active?(isYes?"#6ee7b7":"#fca5a5"):"#71717a",fontSize:"11px",cursor:"pointer",
-      });
-      const envCorrectBtn=(val,active)=>({
-        padding:"6px 16px",
-        border:`1px solid ${active?(val===true?"#10b981":val===false?"#ef4444":"#6366f1"):"#3f3f46"}`,borderRadius:"4px",
-        background:active?(val===true?"#064e3b":val===false?"#450a0a":"#1e1b4b"):"#18181b",
-        color:active?(val===true?"#6ee7b7":val===false?"#fca5a5":"#a5b4fc"):"#71717a",fontSize:"11px",cursor:"pointer",
-      });
-
-      // Dashboard view (full takeover)
-      if(view==="dashboard") {
-        if(!loadedSaved) return <div style={{...mono,background:DC.bg,minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",color:DC.muted,fontSize:12}}>Loading…</div>;
-        if(savedSessions.length===0) return (
-          <div style={{...mono,background:DC.bg,minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:12}}>
-            <div style={{color:DC.muted,fontSize:12}}>No sessions saved yet.</div>
-            <div style={{color:"#3f3f46",fontSize:10}}>Complete a session and hit Save Session.</div>
-            <button onClick={()=>setView("session")} style={{...mono,background:DC.card,border:`1px solid ${DC.border2}`,color:DC.muted,padding:"8px 16px",borderRadius:6,fontSize:11,cursor:"pointer",marginTop:8}}>← Back to Logger</button>
-          </div>
-        );
-        return <Dashboard sessions={savedSessions} onBack={()=>setView("session")}/>;
-      }
-
-      const saveLabel = saveStatus==="saving"?"SAVING…":saveStatus==="saved"?"✓ SAVED":saveStatus==="error"?"ERROR":"SAVE SESSION";
-
-      return (
-        <div style={{background:"#0a0a0a",minHeight:"100vh",fontFamily:"'JetBrains Mono','Courier New',monospace"}}>
-
-          {/* ── Header ── */}
-          <div style={{borderBottom:"1px solid #27272a",padding:"16px 24px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-            <div>
-              <div style={{color:"#71717a",fontSize:"10px",letterSpacing:"0.2em",marginBottom:"2px"}}>KAIZEN TRADE AUTOPSY</div>
-              <div style={{color:"#e4e4e7",fontSize:"18px",fontWeight:"700",letterSpacing:"0.05em"}}>SESSION LOG</div>
-            </div>
-            <div style={{display:"flex",gap:"8px"}}>
-              <button id="print-btn" onClick={()=>window.print()} style={{...hdrBtn,borderColor:"#6366f1",color:"#a5b4fc"}}>⬇ PRINT / SAVE PDF</button>
-              <button onClick={handleSaveSession} style={{...hdrBtn,borderColor:saveStatus==="saved"?"#10b981":saveStatus==="error"?"#ef4444":"#3f3f46",color:saveStatus==="saved"?"#6ee7b7":saveStatus==="error"?"#fca5a5":"#a1a1aa"}}>{saveLabel}</button>
-              <button onClick={()=>setView("dashboard")} style={{...hdrBtn,borderColor:"#6366f1",color:"#a5b4fc"}}>📊 DASHBOARD</button>
-              <button onClick={()=>setView(view==="session"?"summary":"session")} style={hdrBtn}>{view==="session"?"VIEW SUMMARY":"VIEW SESSION"}</button>
-              <button onClick={resetSession} style={{...hdrBtn,color:"#71717a"}}>NEW SESSION</button>
-            </div>
-          </div>
-
-          <div style={{maxWidth:"860px",margin:"0 auto",padding:"24px 16px"}}>
-
-            {/* ── Mantra ── */}
-            <div style={{borderLeft:"2px solid #3f3f46",paddingLeft:"16px",marginBottom:"28px"}}>
-              <div style={{color:"#52525b",fontSize:"11px",fontStyle:"italic",lineHeight:"1.8"}}>
-                I protect the account. I stack clean days. I become impossible to kill.<br/>
-                Has the market earned my participation?
-              </div>
-            </div>
-
-            {/* ── PRE-SESSION ── */}
+        {/* ── View routing ── */}
+        {view==="dashboard"?(
+          <AnalyticsDashboard historicalSessions={history}/>
+        ):view==="summary"?(
+          <SummaryPanel session={session}/>
+        ):(
+          <>
+            {/* PRE-SESSION */}
             <div style={{border:"1px solid #3f3f46",borderRadius:"8px",padding:"20px",marginBottom:"20px",background:"#09090b"}}>
               <div style={{color:"#71717a",fontSize:"10px",letterSpacing:"0.2em",marginBottom:"16px"}}>PRE-SESSION</div>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"16px",marginBottom:"16px"}}>
@@ -1182,80 +1151,78 @@
                   ))}
                 </div>
                 <div style={{color:"#52525b",fontSize:"10px",marginTop:"6px",fontStyle:"italic"}}>
-                  ROTATIONAL = levels respected · CHOP = whipsaws, avoid · EXPANSION = violent, fast, kills discretion
+                  ROTATIONAL = levels respected, discretion works · CHOP = whipsaws, avoid · EXPANSION = violent, fast, kills discretion
                 </div>
               </div>
             </div>
 
-            {/* ── SUMMARY or SESSION ── */}
-            {view==="summary" ? (
-              <SummaryPanel session={session}/>
-            ) : (
-              <>
-                <div style={{marginBottom:"8px",color:"#71717a",fontSize:"10px",letterSpacing:"0.2em"}}>TRADE LOG</div>
-                {session.trades.map((trade,i)=>(
-                  <TradeCard key={trade.id} trade={trade} index={i}
-                    onChange={updated=>updateTrade(trade.id,updated)}
-                    onRemove={()=>removeTrade(trade.id)}/>
+            {/* TRADE LOG */}
+            <div style={{marginBottom:"8px",color:"#71717a",fontSize:"10px",letterSpacing:"0.2em"}}>TRADE LOG</div>
+            {session.trades.map((trade,i)=>(
+              <TradeCard key={trade.id} trade={trade} index={i} onChange={updated=>updateTrade(trade.id,updated)} onRemove={()=>removeTrade(trade.id)}/>
+            ))}
+            <button onClick={addTrade}
+              style={{width:"100%",background:"none",border:"1px dashed #3f3f46",color:"#52525b",padding:"12px",borderRadius:"8px",fontSize:"12px",cursor:"pointer",marginBottom:"24px"}}
+              onMouseOver={e=>{e.target.style.borderColor="#a1a1aa";e.target.style.color="#a1a1aa";}}
+              onMouseOut={e=>{e.target.style.borderColor="#3f3f46";e.target.style.color="#52525b";}}>
+              + ADD TRADE TO LOG
+            </button>
+
+            {/* Trades Avoided */}
+            <TradesAvoided avoided={avoided} setAvoided={setAvoided}/>
+
+            {/* POST-SESSION LAYER */}
+            <div style={{border:"1px solid #3f3f46",borderRadius:"8px",padding:"20px",background:"#09090b",marginBottom:"20px"}}>
+              <div style={{color:"#71717a",fontSize:"10px",letterSpacing:"0.2em",marginBottom:"16px"}}>POST-SESSION LAYER</div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:"12px",marginBottom:"16px"}}>
+                {[
+                  {key:"cheatScore",label:"CHEAT SCORE (1-5)",hint:"5 = perfect execution"},
+                  {key:"patienceScore",label:"PATIENCE SCORE (1-5)",hint:"5 = rules followed"},
+                  {key:"walkAways",label:"WALK AWAYS LOGGED",hint:"0"},
+                  {key:"reentryCount",label:"RE-ENTRY COUNT",hint:"0"},
+                ].map(({key,label,hint})=>(
+                  <div key={key}>
+                    <div style={{color:"#71717a",fontSize:"10px",marginBottom:"6px"}}>{label}</div>
+                    <Input value={session[key]||""} onChange={v=>updateSession(key,v)} placeholder={hint}/>
+                  </div>
                 ))}
-                <button onClick={addTrade} style={{width:"100%",background:"none",border:"1px dashed #3f3f46",color:"#52525b",padding:"12px",borderRadius:"8px",fontSize:"11px",cursor:"pointer",marginBottom:"20px"}}>
-                  + ADD TRADE
-                </button>
-
-                {/* Trades Avoided */}
-                <TradesAvoided avoided={session.avoided||[]} setAvoided={setAvoided}/>
-
-                {/* Session Metrics */}
-                <div style={{border:"1px solid #3f3f46",borderRadius:"8px",padding:"20px",marginBottom:"20px",background:"#09090b"}}>
-                  <div style={{color:"#71717a",fontSize:"10px",letterSpacing:"0.2em",marginBottom:"16px"}}>SESSION METRICS</div>
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"12px",marginBottom:"16px"}}>
-                    {[
-                      {key:"reentryCount", label:"Re-entry Count",            hint:"How many re-entries"},
-                      {key:"walkAways",    label:"Conscious Walk-Aways",      hint:"Times passed on a setup"},
-                      {key:"patienceScore",label:"Patience Score (1–5)",      hint:"1=clicked fast, 5=fully let market prove"},
-                    ].map(({key,label,hint})=>(
-                      <div key={key}>
-                        <div style={{color:"#71717a",fontSize:"10px",marginBottom:"2px"}}>{label}</div>
-                        <div style={{color:"#52525b",fontSize:"9px",marginBottom:"6px",fontStyle:"italic"}}>{hint}</div>
-                        <input value={session[key]} onChange={e=>updateSession(key,e.target.value)} className="field-input"/>
-                      </div>
-                    ))}
-                  </div>
-                  <div style={{marginBottom:"12px"}}>
-                    <div style={{color:"#71717a",fontSize:"10px",marginBottom:"6px"}}>WAS ENVIRONMENT CALL CORRECT?</div>
-                    <div style={{display:"flex",gap:"8px"}}>
-                      {[true,false,"unknown"].map(v=>(
-                        <button key={String(v)} onClick={()=>updateSession("environmentCorrect",session.environmentCorrect===v?null:v)} style={envCorrectBtn(v,session.environmentCorrect===v)}>
-                          {v===true?"YES":v===false?"NO":"UNKNOWN"}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <div style={{color:"#71717a",fontSize:"10px",marginBottom:"6px"}}>SESSION NOTES / LESSON</div>
-                    <textarea value={session.sessionNotes} onChange={e=>updateSession("sessionNotes",e.target.value)} rows={3} placeholder="What did the session teach you? One key takeaway." className="field-input"/>
-                  </div>
+              </div>
+              <div style={{marginBottom:"16px"}}>
+                <div style={{color:"#71717a",fontSize:"10px",marginBottom:"6px"}}>WAS ENVIRONMENT CALL CORRECT?</div>
+                <div style={{display:"flex",gap:"8px"}}>
+                  {[true,false,"unknown"].map(v=>(
+                    <button key={String(v)} onClick={()=>updateSession("environmentCorrect",session.environmentCorrect===v?null:v)} style={envCorrectBtn(v,session.environmentCorrect===v)}>
+                      {v===true?"YES":v===false?"NO":"UNKNOWN"}
+                    </button>
+                  ))}
                 </div>
-
-                {/* Post-session daily check */}
-                <div style={{border:"1px solid #3f3f46",borderRadius:"8px",padding:"20px",background:"#09090b"}}>
-                  <div style={{color:"#71717a",fontSize:"10px",letterSpacing:"0.2em",marginBottom:"12px"}}>POST-SESSION — DAILY CHECK</div>
-                  <SummaryPanel session={session}/>
-                </div>
-              </>
-            )}
-
-            <div style={{marginTop:"24px",color:"#3f3f46",fontSize:"10px",textAlign:"center",fontStyle:"italic"}}>
-              The account staying open is the win condition. Profit is the bonus.
+              </div>
+              <div>
+                <div style={{color:"#71717a",fontSize:"10px",marginBottom:"6px"}}>SESSION NOTES / LESSON</div>
+                <textarea value={session.sessionNotes} onChange={e=>updateSession("sessionNotes",e.target.value)} rows={3} placeholder="What did the session teach you? One key takeaway." className="field-input"/>
+              </div>
             </div>
-          </div>
-        </div>
-      );
-    }
 
-    // ── Mount
-    const root = ReactDOM.createRoot(document.getElementById("root"));
-    root.render(<KaizenApp/>);
-  </script>
+            {/* Post-session daily check */}
+            <div style={{border:"1px solid #3f3f46",borderRadius:"8px",padding:"20px",background:"#09090b"}}>
+              <div style={{color:"#71717a",fontSize:"10px",letterSpacing:"0.2em",marginBottom:"12px"}}>POST-SESSION — DAILY CHECK</div>
+              <SummaryPanel session={session}/>
+            </div>
+          </>
+        )}
+
+        {/* Footer */}
+        <div style={{marginTop:"32px",borderTop:"1px solid #27272a",paddingTop:"16px",color:"#52525b",fontSize:"10px",textAlign:"center"}}>
+          Kaizen Log · Secure Client-Side Continuous Evaluation Tool · The account staying open is the win condition.
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const container=document.getElementById("root");
+const root=ReactDOM.createRoot(container);
+root.render(<KaizenTradeTemplate/>);
+</script>
 </body>
 </html>
